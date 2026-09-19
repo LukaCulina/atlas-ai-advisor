@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../db/db";
+import { chatCompletion, ChatMessage } from "../services/openrouter";
 
 export const conversationsRouter = Router();
 
@@ -17,6 +18,12 @@ interface MessageRow {
   content: string;
   tool_calls_json: string | null;
   created_at: string;
+}
+
+interface SettingsRow {
+  id: number;
+  system_prompt: string;
+  updated_at: string;
 }
 
 conversationsRouter.post("/", (req, res) => {
@@ -67,7 +74,7 @@ conversationsRouter.delete("/:id", (req, res) => {
   res.status(204).send();
 });
 
-conversationsRouter.post("/:id/messages", (req, res) => {
+conversationsRouter.post("/:id/messages", async (req, res) => {
   const conversation = db
     .prepare("SELECT * FROM conversations WHERE id = ?")
     .get(req.params.id) as ConversationRow | undefined;
@@ -86,9 +93,25 @@ conversationsRouter.post("/:id/messages", (req, res) => {
   );
   insertMessage.run(conversation.id, "user", content);
 
-  // Placeholder reply — replaced by the real OpenRouter agent loop in phase 3.
-  const placeholderReply = "This is a placeholder response. Real AI integration comes in a later phase.";
-  const assistantResult = insertMessage.run(conversation.id, "assistant", placeholderReply);
+  const settings = db.prepare("SELECT * FROM settings WHERE id = 1").get() as SettingsRow;
+  const history = db
+    .prepare("SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC, id ASC")
+    .all(conversation.id) as MessageRow[];
+
+  const chatMessages: ChatMessage[] = [
+    { role: "system", content: settings.system_prompt },
+    ...history.map((m) => ({ role: m.role, content: m.content })),
+  ];
+
+  let reply: string;
+  try {
+    reply = await chatCompletion(chatMessages);
+  } catch (err) {
+    console.error("OpenRouter request failed:", err);
+    return res.status(502).json({ error: "Failed to get a response from the advisor" });
+  }
+
+  const assistantResult = insertMessage.run(conversation.id, "assistant", reply);
 
   db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(conversation.id);
 
