@@ -1,6 +1,7 @@
 import { createChatCompletion, ChatMessage, ToolDefinition } from "./openrouter";
 import { getExchangeRate } from "./tools/exchangeRate";
 import { getCurrentWeather } from "./tools/weather";
+import { rememberTravelerFact, getAllTravelerFacts } from "./tools/memory";
 
 const TOOLS: ToolDefinition[] = [
   {
@@ -34,9 +35,28 @@ const TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "remember_traveler_fact",
+      description:
+        "Save a durable fact about the traveler (home city, travel companions, preferences, budget, etc.) so it can be recalled in future, separate conversations instead of asking again.",
+      parameters: {
+        type: "object",
+        properties: {
+          key: {
+            type: "string",
+            description: "Short, consistent snake_case identifier for the fact, e.g. 'home_airport' or 'travel_companions'",
+          },
+          value: { type: "string", description: "The fact's value as a short string" },
+        },
+        required: ["key", "value"],
+      },
+    },
+  },
 ];
 
-async function executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+async function executeTool(name: string, args: Record<string, unknown>, conversationId: number): Promise<unknown> {
   switch (name) {
     case "get_exchange_rate":
       return getExchangeRate(
@@ -46,6 +66,8 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       );
     case "get_current_weather":
       return getCurrentWeather(String(args.location));
+    case "remember_traveler_fact":
+      return rememberTravelerFact(String(args.key), String(args.value), conversationId);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -65,8 +87,19 @@ export interface AgentResult {
 
 const MAX_TOOL_ROUNDS = 4;
 
-export async function runAgent(initialMessages: ChatMessage[]): Promise<AgentResult> {
-  const messages: ChatMessage[] = [...initialMessages];
+export async function runAgent(
+  systemPrompt: string,
+  history: ChatMessage[],
+  conversationId: number
+): Promise<AgentResult> {
+  const facts = getAllTravelerFacts();
+  const factsBlock =
+    facts.length > 0
+      ? "\n\nKnown facts about this traveler from previous conversations:\n" +
+        facts.map((f) => `- ${f.key}: ${f.value}`).join("\n")
+      : "";
+
+  const messages: ChatMessage[] = [{ role: "system", content: systemPrompt + factsBlock }, ...history];
   const toolCalls: ToolCallTrace[] = [];
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -89,7 +122,7 @@ export async function runAgent(initialMessages: ChatMessage[]): Promise<AgentRes
 
       const trace: ToolCallTrace = { name: call.function.name, arguments: args };
       try {
-        trace.result = await executeTool(call.function.name, args);
+        trace.result = await executeTool(call.function.name, args, conversationId);
       } catch (err) {
         trace.error = err instanceof Error ? err.message : String(err);
       }

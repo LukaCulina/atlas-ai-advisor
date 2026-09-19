@@ -99,14 +99,11 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     .prepare("SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC, id ASC")
     .all(conversation.id) as MessageRow[];
 
-  const chatMessages: ChatMessage[] = [
-    { role: "system", content: settings.system_prompt },
-    ...history.map((m) => ({ role: m.role, content: m.content })),
-  ];
+  const historyMessages: ChatMessage[] = history.map((m) => ({ role: m.role, content: m.content }));
 
   let agentResult;
   try {
-    agentResult = await runAgent(chatMessages);
+    agentResult = await runAgent(settings.system_prompt, historyMessages, conversation.id);
   } catch (err) {
     console.error("Agent run failed:", err);
     return res.status(502).json({ error: "Failed to get a response from the advisor" });
