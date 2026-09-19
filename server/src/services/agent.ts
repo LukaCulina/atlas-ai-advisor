@@ -2,6 +2,7 @@ import { createChatCompletion, ChatMessage, ToolDefinition } from "./openrouter"
 import { getExchangeRate } from "./tools/exchangeRate";
 import { getCurrentWeather } from "./tools/weather";
 import { rememberTravelerFact, getAllTravelerFacts } from "./tools/memory";
+import { updateTripPlan, setTripDay, getTripWithDays } from "./tools/tripPlan";
 
 const TOOLS: ToolDefinition[] = [
   {
@@ -54,6 +55,45 @@ const TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "update_trip_plan",
+      description:
+        "Update the traveler's single active trip plan — its destination, dates, and/or general notes. Only pass fields that are changing.",
+      parameters: {
+        type: "object",
+        properties: {
+          destination: { type: "string" },
+          start_date: { type: "string", description: "ISO date, e.g. 2026-04-01" },
+          end_date: { type: "string", description: "ISO date, e.g. 2026-04-10" },
+          notes: { type: "string" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "set_trip_day",
+      description:
+        "Create or update a specific day of the trip's day-by-day itinerary, identified by its day number (1 = first day of the trip).",
+      parameters: {
+        type: "object",
+        properties: {
+          day_number: { type: "integer", description: "1-based day number within the trip" },
+          date: { type: "string", description: "Optional ISO date for this day" },
+          summary: { type: "string", description: "Short summary of the day's plan" },
+          activities: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of planned activities for the day",
+          },
+        },
+        required: ["day_number"],
+      },
+    },
+  },
 ];
 
 async function executeTool(name: string, args: Record<string, unknown>, conversationId: number): Promise<unknown> {
@@ -68,6 +108,19 @@ async function executeTool(name: string, args: Record<string, unknown>, conversa
       return getCurrentWeather(String(args.location));
     case "remember_traveler_fact":
       return rememberTravelerFact(String(args.key), String(args.value), conversationId);
+    case "update_trip_plan":
+      return updateTripPlan({
+        destination: typeof args.destination === "string" ? args.destination : undefined,
+        start_date: typeof args.start_date === "string" ? args.start_date : undefined,
+        end_date: typeof args.end_date === "string" ? args.end_date : undefined,
+        notes: typeof args.notes === "string" ? args.notes : undefined,
+      });
+    case "set_trip_day":
+      return setTripDay(Number(args.day_number), {
+        date: typeof args.date === "string" ? args.date : undefined,
+        summary: typeof args.summary === "string" ? args.summary : undefined,
+        activities: Array.isArray(args.activities) ? args.activities.map(String) : undefined,
+      });
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -99,7 +152,17 @@ export async function runAgent(
         facts.map((f) => `- ${f.key}: ${f.value}`).join("\n")
       : "";
 
-  const messages: ChatMessage[] = [{ role: "system", content: systemPrompt + factsBlock }, ...history];
+  const trip = getTripWithDays();
+  const tripBlock =
+    trip.destination || trip.days.length > 0
+      ? "\n\nCurrent trip plan on file (this is the live, ground-truth state — it may have been edited directly by the traveler outside this chat, so trust this over anything said earlier in the conversation):\n" +
+        JSON.stringify(trip)
+      : "";
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt + factsBlock + tripBlock },
+    ...history,
+  ];
   const toolCalls: ToolCallTrace[] = [];
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
