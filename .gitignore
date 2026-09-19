@@ -10,3 +10,11 @@ venv/
 .venv/
 node_modules/
 __pycache__/
+
+# Build output
+client/dist/
+server/dist/
+
+# SQLite database files
+*.db
+*.db-journal
