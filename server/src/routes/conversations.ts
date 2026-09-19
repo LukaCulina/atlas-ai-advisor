@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../db/db";
-import { chatCompletion, ChatMessage } from "../services/openrouter";
+import { ChatMessage } from "../services/openrouter";
+import { runAgent } from "../services/agent";
 
 export const conversationsRouter = Router();
 
@@ -103,15 +104,22 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     ...history.map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  let reply: string;
+  let agentResult;
   try {
-    reply = await chatCompletion(chatMessages);
+    agentResult = await runAgent(chatMessages);
   } catch (err) {
-    console.error("OpenRouter request failed:", err);
+    console.error("Agent run failed:", err);
     return res.status(502).json({ error: "Failed to get a response from the advisor" });
   }
 
-  const assistantResult = insertMessage.run(conversation.id, "assistant", reply);
+  const assistantResult = db
+    .prepare("INSERT INTO messages (conversation_id, role, content, tool_calls_json) VALUES (?, ?, ?, ?)")
+    .run(
+      conversation.id,
+      "assistant",
+      agentResult.content,
+      agentResult.toolCalls.length > 0 ? JSON.stringify(agentResult.toolCalls) : null
+    );
 
   db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(conversation.id);
 

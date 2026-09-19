@@ -1,11 +1,31 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-export interface ChatMessage {
-  role: "system" | "user" | "assistant" | "tool";
-  content: string;
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
 }
 
-export async function chatCompletion(messages: ChatMessage[]): Promise<string> {
+export interface ChatMessage {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+}
+
+export interface ToolDefinition {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export async function createChatCompletion(
+  messages: ChatMessage[],
+  tools?: ToolDefinition[]
+): Promise<ChatMessage> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY is not set");
@@ -20,6 +40,7 @@ export async function chatCompletion(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5",
       messages,
+      ...(tools ? { tools } : {}),
     }),
   });
 
@@ -28,14 +49,12 @@ export async function chatCompletion(messages: ChatMessage[]): Promise<string> {
     throw new Error(`OpenRouter request failed (${response.status}): ${body}`);
   }
 
-  const data = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const content = data.choices?.[0]?.message?.content;
+  const data = (await response.json()) as { choices?: { message?: ChatMessage }[] };
+  const message = data.choices?.[0]?.message;
 
-  if (typeof content !== "string") {
-    throw new Error("OpenRouter response did not include message content");
+  if (!message) {
+    throw new Error("OpenRouter response did not include a message");
   }
 
-  return content;
+  return message;
 }
