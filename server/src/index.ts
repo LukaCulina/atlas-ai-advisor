@@ -2,6 +2,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import "./db/db";
+import { conversationsRouter } from "./routes/conversations";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -11,6 +12,8 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api/conversations", conversationsRouter);
 
 // In production the client is built and copied alongside the server
 // (see Dockerfile); in local dev it's served separately by Vite instead.
