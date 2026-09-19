@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import "./db/db";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
