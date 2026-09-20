@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, ApiError, type ConversationWithMessages, type Message } from "../api/client";
+import { TripPlanPanel } from "../components/TripPlanPanel";
 
 export function Chat() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export function Chat() {
   const [sendError, setSendError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [tripRefreshSignal, setTripRefreshSignal] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,7 @@ export function Chat() {
     try {
       const assistantMessage = await api.sendMessage(conversation.id, content);
       setConversation((prev) => (prev ? { ...prev, messages: [...prev.messages, assistantMessage] } : prev));
+      setTripRefreshSignal((n) => n + 1);
     } catch (err) {
       setSendError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -84,43 +87,48 @@ export function Chat() {
   if (!conversation) return <p>Loading conversation...</p>;
 
   return (
-    <div className="chat-page">
+    <div>
       <h1>{conversation.title}</h1>
-
-      <div className="message-list">
-        {conversation.messages.length === 0 && (
-          <p className="chat-empty">Say hello to start planning your trip.</p>
-        )}
-        {conversation.messages.map((m) => (
-          <div key={m.id} className={`message message-${m.role}`}>
-            <div className="message-bubble">{m.content}</div>
-            {toolNames(m.tool_calls_json).length > 0 && (
-              <div className="message-tools">Used live data: {toolNames(m.tool_calls_json).join(", ")}</div>
+      <div className="chat-layout">
+        <div className="chat-page">
+          <div className="message-list">
+            {conversation.messages.length === 0 && (
+              <p className="chat-empty">Say hello to start planning your trip.</p>
             )}
+            {conversation.messages.map((m) => (
+              <div key={m.id} className={`message message-${m.role}`}>
+                <div className="message-bubble">{m.content}</div>
+                {toolNames(m.tool_calls_json).length > 0 && (
+                  <div className="message-tools">Used live data: {toolNames(m.tool_calls_json).join(", ")}</div>
+                )}
+              </div>
+            ))}
+            {sending && (
+              <div className="message message-assistant">
+                <div className="message-bubble message-pending">Thinking...</div>
+              </div>
+            )}
+            <div ref={bottomRef} />
           </div>
-        ))}
-        {sending && (
-          <div className="message message-assistant">
-            <div className="message-bubble message-pending">Thinking...</div>
+
+          {sendError && <p className="error">{sendError}</p>}
+
+          <div className="chat-input">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about destinations, dates, weather, exchange rates..."
+              rows={2}
+              disabled={sending}
+            />
+            <button onClick={handleSend} disabled={sending || !draft.trim()}>
+              Send
+            </button>
           </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
+        </div>
 
-      {sendError && <p className="error">{sendError}</p>}
-
-      <div className="chat-input">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask about destinations, dates, weather, exchange rates..."
-          rows={2}
-          disabled={sending}
-        />
-        <button onClick={handleSend} disabled={sending || !draft.trim()}>
-          Send
-        </button>
+        <TripPlanPanel refreshSignal={tripRefreshSignal} />
       </div>
     </div>
   );
