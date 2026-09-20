@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api, ApiError, type ConversationWithMessages, type Message } from "../api/client";
 import { TripPlanPanel } from "../components/TripPlanPanel";
 
@@ -93,7 +95,9 @@ export function Chat() {
             )}
             {conversation.messages.map((m) => (
               <div key={m.id} className={`message message-${m.role}`}>
-                <div className="message-bubble">{m.content}</div>
+                <div className="message-bubble">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                </div>
                 {toolNames(m.tool_calls_json).length > 0 && (
                   <div className="message-tools">Used live data: {toolNames(m.tool_calls_json).join(", ")}</div>
                 )}
