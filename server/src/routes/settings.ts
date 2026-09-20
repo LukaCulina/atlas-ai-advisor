@@ -1,13 +1,8 @@
 import { Router } from "express";
 import { db } from "../db/db";
+import { SettingsRow } from "../db/types";
 
 export const settingsRouter = Router();
-
-interface SettingsRow {
-  id: number;
-  system_prompt: string;
-  updated_at: string;
-}
 
 function getSettings(): SettingsRow {
   return db.prepare("SELECT * FROM settings WHERE id = 1").get() as SettingsRow;

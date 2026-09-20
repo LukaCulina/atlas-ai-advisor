@@ -2,30 +2,9 @@ import { Router } from "express";
 import { db } from "../db/db";
 import { ChatMessage } from "../services/openrouter";
 import { runAgent } from "../services/agent";
+import { ConversationRow, MessageRow, SettingsRow } from "../db/types";
 
 export const conversationsRouter = Router();
-
-interface ConversationRow {
-  id: number;
-  title: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface MessageRow {
-  id: number;
-  conversation_id: number;
-  role: "user" | "assistant" | "tool";
-  content: string;
-  tool_calls_json: string | null;
-  created_at: string;
-}
-
-interface SettingsRow {
-  id: number;
-  system_prompt: string;
-  updated_at: string;
-}
 
 conversationsRouter.post("/", (req, res) => {
   const title = typeof req.body?.title === "string" && req.body.title.trim() ? req.body.title.trim() : "New conversation";

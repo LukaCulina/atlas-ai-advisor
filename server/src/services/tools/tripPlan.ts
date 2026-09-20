@@ -1,4 +1,5 @@
 import { db } from "../../db/db";
+import { TripRow, TripDayRow, tripDayToJson } from "../../db/types";
 
 interface TripFields {
   destination?: string;
@@ -7,37 +8,13 @@ interface TripFields {
   notes?: string;
 }
 
-interface TripRow {
-  id: number;
-  destination: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  notes: string | null;
-  updated_at: string;
-}
-
-interface TripDayRow {
-  id: number;
-  day_number: number;
-  date: string | null;
-  summary: string | null;
-  activities_json: string | null;
-  updated_at: string;
-}
-
 function getTrip(): TripRow {
   return db.prepare("SELECT * FROM trip WHERE id = 1").get() as TripRow;
 }
 
 export function getTripWithDays() {
   const days = db.prepare("SELECT * FROM trip_days ORDER BY day_number ASC").all() as TripDayRow[];
-  return {
-    ...getTrip(),
-    days: days.map(({ activities_json, ...rest }) => ({
-      ...rest,
-      activities: activities_json ? JSON.parse(activities_json) : [],
-    })),
-  };
+  return { ...getTrip(), days: days.map(tripDayToJson) };
 }
 
 export function updateTripPlan(fields: TripFields) {

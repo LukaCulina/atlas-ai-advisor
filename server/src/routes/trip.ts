@@ -1,30 +1,8 @@
 import { Router } from "express";
 import { db } from "../db/db";
+import { TripRow, TripDayRow, tripDayToJson } from "../db/types";
 
 export const tripRouter = Router();
-
-interface TripRow {
-  id: number;
-  destination: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  notes: string | null;
-  updated_at: string;
-}
-
-interface TripDayRow {
-  id: number;
-  day_number: number;
-  date: string | null;
-  summary: string | null;
-  activities_json: string | null;
-  updated_at: string;
-}
-
-function dayToJson(row: TripDayRow) {
-  const { activities_json, ...rest } = row;
-  return { ...rest, activities: activities_json ? JSON.parse(activities_json) : [] };
-}
 
 function getTrip(): TripRow {
   return db.prepare("SELECT * FROM trip WHERE id = 1").get() as TripRow;
@@ -35,7 +13,7 @@ function getDays(): TripDayRow[] {
 }
 
 tripRouter.get("/", (_req, res) => {
-  res.json({ ...getTrip(), days: getDays().map(dayToJson) });
+  res.json({ ...getTrip(), days: getDays().map(tripDayToJson) });
 });
 
 tripRouter.patch("/", (req, res) => {
@@ -75,7 +53,7 @@ tripRouter.post("/days", (req, res) => {
     .run(dayNumber, date, summary, activitiesJson);
 
   const day = db.prepare("SELECT * FROM trip_days WHERE id = ?").get(result.lastInsertRowid) as TripDayRow;
-  res.status(201).json(dayToJson(day));
+  res.status(201).json(tripDayToJson(day));
 });
 
 tripRouter.patch("/days/:id", (req, res) => {
@@ -116,7 +94,7 @@ tripRouter.patch("/days/:id", (req, res) => {
   db.prepare(`UPDATE trip_days SET ${updates.join(", ")} WHERE id = ?`).run(...values, req.params.id);
 
   const updated = db.prepare("SELECT * FROM trip_days WHERE id = ?").get(req.params.id) as TripDayRow;
-  res.json(dayToJson(updated));
+  res.json(tripDayToJson(updated));
 });
 
 tripRouter.delete("/days/:id", (req, res) => {
