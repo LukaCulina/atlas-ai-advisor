@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api, ApiError, type ConversationWithMessages, type Message } from "../api/client";
@@ -13,6 +13,8 @@ type DisplayConversation = Omit<ConversationWithMessages, "messages"> & { messag
 export function Chat() {
   const { id } = useParams<{ id: string }>();
   const conversationId = Number(id);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [conversation, setConversation] = useState<DisplayConversation | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -23,18 +25,26 @@ export function Chat() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingSubmittedRef = useRef(false);
 
   useEffect(() => {
+    let ignore = false;
     api
       .getConversation(conversationId)
-      .then(setConversation)
+      .then((data) => {
+        if (!ignore) setConversation(data);
+      })
       .catch((err) => {
+        if (ignore) return;
         if (err instanceof ApiError && err.status === 404) {
           setNotFound(true);
         } else {
           setLoadError(err instanceof Error ? err.message : String(err));
         }
       });
+    return () => {
+      ignore = true;
+    };
   }, [conversationId]);
 
   useEffect(() => {
@@ -50,54 +60,74 @@ export function Chat() {
   useTopBarTitle(conversation?.title ?? null);
   const { updateTitleLocally } = useConversations();
 
-  const sendContent = async (content: string, tempId: number) => {
-    if (!conversation) return;
-    setSending(true);
+  const sendContent = useCallback(
+    async (content: string, tempId: number) => {
+      if (!conversation) return;
+      setSending(true);
 
-    try {
-      const response = await api.sendMessage(conversation.id, content);
-      const { conversationTitle, ...assistantMessage } = response;
-      setConversation((prev) => {
-        if (!prev) return prev;
-        const messages = prev.messages.map((m) => (m.id === tempId ? { ...m, status: undefined } : m));
-        return {
-          ...prev,
-          messages: [...messages, assistantMessage],
-          ...(conversationTitle ? { title: conversationTitle } : {}),
-        };
-      });
-      if (conversationTitle) updateTitleLocally(conversation.id, conversationTitle);
-      setTripRefreshSignal((n) => n + 1);
-    } catch {
-      setConversation((prev) =>
-        prev
-          ? { ...prev, messages: prev.messages.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)) }
-          : prev
-      );
-    } finally {
-      setSending(false);
-    }
-  };
+      try {
+        const response = await api.sendMessage(conversation.id, content);
+        const { conversationTitle, ...assistantMessage } = response;
+        setConversation((prev) => {
+          if (!prev) return prev;
+          const messages = prev.messages.map((m) => (m.id === tempId ? { ...m, status: undefined } : m));
+          return {
+            ...prev,
+            messages: [...messages, assistantMessage],
+            ...(conversationTitle ? { title: conversationTitle } : {}),
+          };
+        });
+        if (conversationTitle) updateTitleLocally(conversation.id, conversationTitle);
+        setTripRefreshSignal((n) => n + 1);
+      } catch {
+        setConversation((prev) =>
+          prev
+            ? { ...prev, messages: prev.messages.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)) }
+            : prev
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [conversation, updateTitleLocally]
+  );
+
+  const submitMessage = useCallback(
+    async (content: string) => {
+      if (!conversation) return;
+
+      const tempId = -Date.now();
+      const optimisticUserMessage: DisplayMessage = {
+        id: tempId,
+        conversation_id: conversation.id,
+        role: "user",
+        content,
+        tool_calls_json: null,
+        created_at: new Date().toISOString(),
+        status: "sending",
+      };
+
+      setConversation((prev) => (prev ? { ...prev, messages: [...prev.messages, optimisticUserMessage] } : prev));
+      await sendContent(content, tempId);
+    },
+    [conversation, sendContent]
+  );
 
   const handleSend = async () => {
     const content = draft.trim();
     if (!content || !conversation || sending) return;
-
-    const tempId = -Date.now();
-    const optimisticUserMessage: DisplayMessage = {
-      id: tempId,
-      conversation_id: conversation.id,
-      role: "user",
-      content,
-      tool_calls_json: null,
-      created_at: new Date().toISOString(),
-      status: "sending",
-    };
-
-    setConversation((prev) => (prev ? { ...prev, messages: [...prev.messages, optimisticUserMessage] } : prev));
     setDraft("");
-    await sendContent(content, tempId);
+    await submitMessage(content);
   };
+
+  useEffect(() => {
+    const pendingMessage = (location.state as { pendingMessage?: string } | null)?.pendingMessage;
+    if (!conversation || !pendingMessage || pendingSubmittedRef.current) return;
+
+    pendingSubmittedRef.current = true;
+    navigate(location.pathname, { replace: true, state: null });
+    submitMessage(pendingMessage);
+  }, [conversation, location.state, location.pathname, navigate, submitMessage]);
 
   const handleRetry = (message: DisplayMessage) => {
     if (sending) return;

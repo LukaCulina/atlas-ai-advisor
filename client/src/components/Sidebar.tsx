@@ -13,27 +13,13 @@ const sidebarNavLinkClassName = ({ isActive }: { isActive: boolean }) =>
   `sidebar-navlink${isActive ? " nav-active" : ""}`;
 
 export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: SidebarProps) {
-  const { conversations, loadError, createConversation, deleteConversation } = useConversations();
+  const { conversations, loadError, deleteConversation } = useConversations();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const handleNewChat = async () => {
-    setCreating(true);
-    setActionError(null);
-    try {
-      const conversation = await createConversation();
-      navigate(`/c/${conversation.id}`);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleDelete = async (id: number) => {
     setActionError(null);
@@ -61,9 +47,9 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
         </button>
       </div>
 
-      <button className="sidebar-new-chat" onClick={handleNewChat} disabled={creating}>
-        {creating ? "Starting..." : "+ New chat"}
-      </button>
+      <Link to="/" className="sidebar-new-chat">
+        + New chat
+      </Link>
 
       <NavLink to="/trip" className={sidebarNavLinkClassName}>
         Trip

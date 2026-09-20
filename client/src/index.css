@@ -191,7 +191,20 @@ button:disabled {
 }
 
 .sidebar-new-chat {
+  display: block;
   margin: 0 4px 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-h);
+  text-decoration: none;
+  text-align: center;
+  font-weight: 500;
+}
+
+.sidebar-new-chat:hover {
+  border-color: var(--accent);
 }
 
 .sidebar-navlink {
@@ -313,7 +326,13 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  align-items: center;
+}
+
+.empty-state .chat-input {
+  width: 100%;
+  border-top: none;
+  padding-top: 0;
+  text-align: left;
 }
 
 .conversation-list {
