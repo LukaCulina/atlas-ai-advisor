@@ -126,6 +126,12 @@ button:disabled {
   background: var(--bg-subtle);
 }
 
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .app-title {
   font-weight: 700;
   font-size: 1.1rem;
@@ -135,18 +141,107 @@ button:disabled {
 
 .app-header nav {
   display: flex;
-  gap: 16px;
+  gap: 20px;
 }
 
 .app-header nav a {
+  display: inline-block;
   text-decoration: none;
-  opacity: var(--opacity-muted);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding-bottom: 6px;
+  border-bottom: 3px solid transparent;
+}
+
+.app-header nav a:hover {
+  color: var(--text-h);
 }
 
 .app-header nav a.nav-active {
-  opacity: 1;
+  color: var(--text-h);
   font-weight: 600;
-  text-decoration: underline;
+  border-bottom-color: var(--accent);
+}
+
+.hamburger-button {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: transparent;
+  border-color: transparent;
+}
+
+.hamburger-button:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+.hamburger-bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-h);
+  border-radius: 1px;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 20;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: min(280px, 80vw);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--bg-subtle);
+  border-right: 1px solid var(--border);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  z-index: 21;
+}
+
+.drawer-open {
+  transform: translateX(0);
+}
+
+.drawer-close {
+  align-self: flex-end;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px 10px;
+}
+
+.drawer a {
+  text-decoration: none;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 8px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+}
+
+.drawer a:hover {
+  background: var(--bg);
+}
+
+.drawer a.nav-active {
+  color: var(--text-h);
+  font-weight: 600;
+  border-left-color: var(--accent);
+  background: var(--bg);
 }
 
 .app-main {
@@ -281,6 +376,17 @@ button:disabled {
   margin-bottom: 8px;
 }
 
+/* Standalone /trip page: let the panel flow as a normal full page instead
+   of the height-capped, internally-scrolling chat sidebar. */
+.trip-page .trip-panel {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.trip-page .trip-panel h2 {
+  font-size: 1.75rem;
+}
+
 @media (max-width: 700px) {
   .chat-layout {
     flex-direction: column;
@@ -294,6 +400,14 @@ button:disabled {
   .trip-panel {
     max-height: none;
     width: 100%;
+  }
+
+  .app-header nav {
+    display: none;
+  }
+
+  .hamburger-button {
+    display: flex;
   }
 }
 
