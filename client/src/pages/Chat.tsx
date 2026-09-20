@@ -57,8 +57,15 @@ export function Chat() {
     if (!sending) textareaRef.current?.focus();
   }, [sending]);
 
-  useTopBarTitle(conversation?.title ?? null);
-  const { updateTitleLocally } = useConversations();
+  const { conversations, updateTitleLocally } = useConversations();
+  // Prefer the shared sidebar list's title over the conversation's own
+  // fetched copy: on a freshly-created chat, the sidebar already has the
+  // optimistic preview title (set by Home before navigating here) while
+  // our own GET still reflects the DB's still-default title, so falling
+  // back to `conversation.title` first would show a stale "New
+  // conversation" flash the sidebar never shows.
+  const sidebarTitle = conversations?.find((c) => c.id === conversationId)?.title;
+  useTopBarTitle(sidebarTitle ?? conversation?.title ?? null);
 
   const sendContent = useCallback(
     async (content: string, tempId: number) => {
