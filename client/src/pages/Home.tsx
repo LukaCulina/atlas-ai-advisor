@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConversations } from "../hooks/useConversations";
 import { useTopBarTitle } from "../hooks/useTopBarTitle";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
+import { SendIcon } from "../components/SendIcon";
 
 const TITLE_PREVIEW_LENGTH = 60;
 
@@ -17,6 +19,8 @@ export function Home() {
   const [draft, setDraft] = useState("");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(textareaRef, draft);
 
   const handleStart = async () => {
     const content = draft.trim();
@@ -52,16 +56,19 @@ export function Home() {
         </label>
         <textarea
           id="home-message-input"
+          ref={textareaRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about destinations, dates, weather, exchange rates..."
-          rows={2}
+          rows={1}
           disabled={starting}
         />
-        <button onClick={handleStart} disabled={starting || !draft.trim()}>
-          {starting ? "Starting..." : "Send"}
-        </button>
+        {draft.trim() && (
+          <button className="chat-send-button" onClick={handleStart} disabled={starting} aria-label="Send message">
+            <SendIcon />
+          </button>
+        )}
       </div>
 
       {error && <p className="error">{error}</p>}

@@ -4,8 +4,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api, ApiError, type ConversationWithMessages, type Message } from "../api/client";
 import { TripPlanPanel } from "../components/TripPlanPanel";
+import { SendIcon } from "../components/SendIcon";
 import { useConversations } from "../hooks/useConversations";
 import { useTopBarTitle } from "../hooks/useTopBarTitle";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 
 type DisplayMessage = Message & { status?: "sending" | "failed" };
 type DisplayConversation = Omit<ConversationWithMessages, "messages"> & { messages: DisplayMessage[] };
@@ -56,6 +58,8 @@ export function Chat() {
     // disabled textarea silently refuses focus().
     if (!sending) textareaRef.current?.focus();
   }, [sending]);
+
+  useAutoResizeTextarea(textareaRef, draft);
 
   const { conversations, updateTitleLocally } = useConversations();
   // Prefer the shared sidebar list's title over the conversation's own
@@ -216,12 +220,14 @@ export function Chat() {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about destinations, dates, weather, exchange rates..."
-            rows={2}
+            rows={1}
             disabled={sending}
           />
-          <button onClick={handleSend} disabled={sending || !draft.trim()}>
-            Send
-          </button>
+          {draft.trim() && (
+            <button className="chat-send-button" onClick={handleSend} disabled={sending} aria-label="Send message">
+              <SendIcon />
+            </button>
+          )}
         </div>
       </div>
 

@@ -718,8 +718,7 @@ button:disabled {
 }
 
 .chat-input {
-  display: flex;
-  gap: 8px;
+  position: relative;
   border-top: 1px solid var(--border);
   padding-top: 12px;
 }
@@ -749,8 +748,39 @@ button:disabled {
 }
 
 .chat-input textarea {
-  flex: 1;
+  display: block;
+  width: 100%;
   resize: none;
+  border-radius: 20px;
+  padding: 14px 52px 14px 18px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transition: height 0.1s ease;
+}
+
+.chat-send-button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.chat-send-button:hover:not(:disabled) {
+  border-color: transparent;
+  filter: brightness(1.1);
+}
+
+.chat-send-button:disabled {
+  opacity: 0.5;
 }
 
 .trip-summary p {
