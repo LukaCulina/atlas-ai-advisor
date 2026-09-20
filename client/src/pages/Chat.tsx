@@ -187,7 +187,7 @@ export function Chat() {
     return (
       <div>
         <p>This conversation doesn't exist or was deleted.</p>
-        <Link to="/">Back to conversations</Link>
+        <Link to="/conversations">Back to conversations</Link>
       </div>
     );
   }

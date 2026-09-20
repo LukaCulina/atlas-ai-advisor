@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import type { Conversation } from "../api/client";
+import { Link, NavLink } from "react-router-dom";
 import { useConversations } from "../hooks/useConversations";
-import { PinIcon } from "./PinIcon";
+import { ConversationRow } from "./ConversationRow";
 import { TripIcon } from "./TripIcon";
 
 interface SidebarProps {
@@ -15,216 +13,8 @@ interface SidebarProps {
 const sidebarNavLinkClassName = ({ isActive }: { isActive: boolean }) =>
   `sidebar-navlink${isActive ? " nav-active" : ""}`;
 
-// Matches (and slightly exceeds) .conversation-menu's min-width, so the
-// clamping math in toggleMenu has an accurate box size to work with.
-const MENU_WIDTH = 180;
-
 export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: SidebarProps) {
-  const { conversations, loadError, deleteConversation, renameConversation, togglePin } = useConversations();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<number | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [openMenu, setOpenMenu] = useState<{ id: number; top: number; left: number } | null>(null);
-  const [renamingId, setRenamingId] = useState<number | null>(null);
-  const [renameDraft, setRenameDraft] = useState("");
-  const [savingRenameId, setSavingRenameId] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
-  const conversationsContainerRef = useRef<HTMLDivElement>(null);
-
-  const toggleMenu = (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
-    if (openMenu?.id === id) {
-      setOpenMenu(null);
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    // Anchor the menu's right edge to the button by default, but clamp to
-    // both viewport edges so it can never render off-screen on a narrow
-    // mobile drawer.
-    const left = Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8);
-    setOpenMenu({ id, top: rect.bottom + 4, left: Math.max(8, left) });
-  };
-
-  useEffect(() => {
-    if (openMenu === null) return;
-
-    const onPointerDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
-      }
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenMenu(null);
-    };
-    const onScroll = () => setOpenMenu(null);
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    const scrollContainer = conversationsContainerRef.current;
-    scrollContainer?.addEventListener("scroll", onScroll);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-      scrollContainer?.removeEventListener("scroll", onScroll);
-    };
-  }, [openMenu]);
-
-  const handleDelete = async (id: number) => {
-    setActionError(null);
-    setDeletingId(id);
-    const wasOpen = location.pathname === `/c/${id}`;
-    try {
-      await deleteConversation(id);
-      if (wasOpen) navigate("/");
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setConfirmingId(null);
-      setDeletingId(null);
-    }
-  };
-
-  useEffect(() => {
-    if (renamingId !== null) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [renamingId]);
-
-  const startRename = (id: number, currentTitle: string) => {
-    setOpenMenu(null);
-    setRenamingId(id);
-    setRenameDraft(currentTitle);
-  };
-
-  const cancelRename = () => setRenamingId(null);
-
-  const saveRename = async (id: number, currentTitle: string) => {
-    const title = renameDraft.trim();
-    if (!title || title === currentTitle) {
-      setRenamingId(null);
-      return;
-    }
-    setSavingRenameId(id);
-    setActionError(null);
-    try {
-      await renameConversation(id, title);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSavingRenameId(null);
-      setRenamingId(null);
-    }
-  };
-
-  const handleRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: number, currentTitle: string) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      saveRename(id, currentTitle);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      cancelRename();
-    }
-  };
-
-  const handleTogglePin = async (id: number, pinned: boolean) => {
-    setOpenMenu(null);
-    setActionError(null);
-    try {
-      await togglePin(id, pinned);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const renderRow = (c: Conversation) => {
-    const isActive = location.pathname === `/c/${c.id}`;
-    return (
-      <li key={c.id} className={`conversation-row${isActive ? " conversation-row-active" : ""}`}>
-        {confirmingId === c.id ? (
-          <span className="delete-confirm">
-            <span className="delete-confirm-warning">This can't be undone.</span>
-            <button
-              className="delete-button-confirm"
-              onClick={() => handleDelete(c.id)}
-              disabled={deletingId === c.id}
-            >
-              {deletingId === c.id ? "Deleting..." : "Confirm delete"}
-            </button>
-            <button onClick={() => setConfirmingId(null)} disabled={deletingId === c.id}>
-              Cancel
-            </button>
-          </span>
-        ) : renamingId === c.id ? (
-          <input
-            ref={renameInputRef}
-            className="conversation-rename-input"
-            value={renameDraft}
-            onChange={(e) => setRenameDraft(e.target.value)}
-            onKeyDown={(e) => handleRenameKeyDown(e, c.id, c.title)}
-            onBlur={cancelRename}
-            disabled={savingRenameId === c.id}
-            aria-label={`Rename ${c.title}`}
-          />
-        ) : (
-          <>
-            <Link to={`/c/${c.id}`} className="conversation-link">
-              <span className="conversation-title">{c.title}</span>
-            </Link>
-            {c.pinned === 1 && (
-              <span className="conversation-pin-icon" aria-label="Pinned">
-                <PinIcon />
-              </span>
-            )}
-            <button
-              className="conversation-menu-button"
-              onClick={(e) => toggleMenu(e, c.id)}
-              aria-label={`More options for ${c.title}`}
-              aria-haspopup="true"
-              aria-expanded={openMenu?.id === c.id}
-            >
-              &#8942;
-            </button>
-            {openMenu?.id === c.id && (
-              <div
-                className="conversation-menu"
-                ref={menuRef}
-                role="menu"
-                style={{ top: openMenu.top, left: openMenu.left }}
-              >
-                <button
-                  className="conversation-menu-item"
-                  role="menuitem"
-                  onClick={() => handleTogglePin(c.id, !c.pinned)}
-                >
-                  {c.pinned ? "Unpin conversation" : "Pin conversation"}
-                </button>
-                <button
-                  className="conversation-menu-item"
-                  role="menuitem"
-                  onClick={() => startRename(c.id, c.title)}
-                >
-                  Rename conversation
-                </button>
-                <button
-                  className="conversation-menu-item conversation-menu-item-danger"
-                  role="menuitem"
-                  onClick={() => {
-                    setOpenMenu(null);
-                    setConfirmingId(c.id);
-                  }}
-                >
-                  Delete conversation
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </li>
-    );
-  };
+  const { conversations, loadError } = useConversations();
 
   return (
     <nav className={`sidebar${mobileOpen ? " drawer-open" : ""}`} aria-label="Sidebar" inert={hidden}>
@@ -246,11 +36,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
         Trip
       </NavLink>
 
-      {actionError && (
-        <p className="error sidebar-error">{actionError}</p>
-      )}
-
-      <div className="sidebar-conversations" ref={conversationsContainerRef}>
+      <div className="sidebar-conversations">
         {loadError ? (
           <p className="error">Failed to load conversations: {loadError}</p>
         ) : !conversations ? (
@@ -264,11 +50,24 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
             {conversations.some((c) => c.pinned) && (
               <>
                 <p className="sidebar-section-label">Pinned</p>
-                <ul className="conversation-list">{conversations.filter((c) => c.pinned).map(renderRow)}</ul>
+                <ul className="conversation-list">
+                  {conversations.filter((c) => c.pinned).map((c) => (
+                    <ConversationRow key={c.id} conversation={c} />
+                  ))}
+                </ul>
               </>
             )}
-            <p className="sidebar-section-label">Recents</p>
-            <ul className="conversation-list">{conversations.filter((c) => !c.pinned).map(renderRow)}</ul>
+            <div className="sidebar-section-header">
+              <p className="sidebar-section-label">Recents</p>
+              <Link to="/conversations" className="sidebar-see-all">
+                Search all
+              </Link>
+            </div>
+            <ul className="conversation-list">
+              {conversations.filter((c) => !c.pinned).map((c) => (
+                <ConversationRow key={c.id} conversation={c} />
+              ))}
+            </ul>
           </>
         )}
       </div>

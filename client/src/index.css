@@ -262,6 +262,41 @@ button:disabled {
   opacity: var(--opacity-muted-faint);
 }
 
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 4px 2px;
+}
+
+.sidebar-section-header .sidebar-section-label {
+  margin: 0;
+}
+
+.sidebar-see-all {
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.conversations-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.conversations-search {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  box-sizing: border-box;
+}
+
 .sidebar-error {
   margin: 0 4px;
 }
