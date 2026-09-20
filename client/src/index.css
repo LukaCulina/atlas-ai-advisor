@@ -490,6 +490,11 @@ button:disabled {
 .chat-layout {
   display: flex;
   align-items: flex-start;
+  gap: 0;
+  transition: gap 0.2s ease;
+}
+
+.chat-layout.chat-trip-open {
   gap: 20px;
 }
 
@@ -501,8 +506,32 @@ button:disabled {
   height: calc(100svh - 100px);
 }
 
+.chat-page-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.trip-panel-toggle {
+  font-size: 0.85rem;
+}
+
+.trip-panel-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.trip-panel-wrapper {
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.trip-panel-close {
+  display: none;
+}
+
 .trip-panel {
-  flex: 2;
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -510,6 +539,10 @@ button:disabled {
   max-height: calc(100svh - 100px);
   overflow-y: auto;
   box-sizing: border-box;
+}
+
+.trip-panel-wrapper .trip-panel {
+  width: 100%;
 }
 
 .trip-panel h2 {
@@ -531,19 +564,55 @@ button:disabled {
   font-size: 1.75rem;
 }
 
+@media (min-width: 701px) {
+  .trip-panel-wrapper {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: 0%;
+    transition: flex-grow 0.2s ease;
+  }
+
+  .chat-layout.chat-trip-open .trip-panel-wrapper {
+    flex-grow: 2;
+  }
+}
+
 @media (max-width: 700px) {
-  .chat-layout {
-    flex-direction: column;
-  }
-
   .chat-page {
-    height: 60svh;
     width: 100%;
   }
 
-  .trip-panel {
+  .trip-panel-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: var(--bg);
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+
+  .chat-layout.chat-trip-open .trip-panel-wrapper {
+    transform: translateY(0);
+  }
+
+  .trip-panel-close {
+    display: block;
+    align-self: flex-end;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 4px 10px;
+    border: none;
+  }
+
+  .trip-panel-wrapper .trip-panel {
+    border: none;
+    padding: 0;
     max-height: none;
-    width: 100%;
   }
 }
 

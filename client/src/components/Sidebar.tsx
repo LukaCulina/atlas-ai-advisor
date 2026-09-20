@@ -221,7 +221,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
     <nav className={`sidebar${mobileOpen ? " drawer-open" : ""}`} aria-label="Sidebar" inert={hidden}>
       <div className="sidebar-header">
         <Link to="/" className="app-title">
-          Travel Advisor
+          Atlas
         </Link>
         <button ref={closeButtonRef} className="drawer-close" onClick={onCloseMobile} aria-label="Close menu">
           &times;

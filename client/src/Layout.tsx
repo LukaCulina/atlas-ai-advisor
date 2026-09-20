@@ -3,14 +3,13 @@ import { Outlet, useLocation } from "react-router-dom";
 import { ConversationsProvider } from "./context/ConversationsContext";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
-import { useMediaQuery } from "./hooks/useMediaQuery";
+import { useMediaQuery, MOBILE_QUERY } from "./hooks/useMediaQuery";
 
 export interface LayoutOutletContext {
   setTopBarTitle: (title: string | null) => void;
 }
 
 const SIDEBAR_COLLAPSED_KEY = "sidebarCollapsed";
-const MOBILE_QUERY = "(max-width: 700px)";
 
 function getInitialCollapsed(): boolean {
   try {

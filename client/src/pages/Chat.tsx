@@ -8,6 +8,7 @@ import { SendIcon } from "../components/SendIcon";
 import { useConversations } from "../hooks/useConversations";
 import { useTopBarTitle } from "../hooks/useTopBarTitle";
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
+import { useMediaQuery, MOBILE_QUERY } from "../hooks/useMediaQuery";
 
 type DisplayMessage = Message & { status?: "sending" | "failed" };
 type DisplayConversation = Omit<ConversationWithMessages, "messages"> & { messages: DisplayMessage[] };
@@ -17,6 +18,7 @@ export function Chat() {
   const conversationId = Number(id);
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   const [conversation, setConversation] = useState<DisplayConversation | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -24,10 +26,13 @@ export function Chat() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [tripRefreshSignal, setTripRefreshSignal] = useState(0);
+  const [tripPanelOpen, setTripPanelOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingSubmittedRef = useRef(false);
+  const tripToggleButtonRef = useRef<HTMLButtonElement>(null);
+  const tripCloseButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -59,6 +64,25 @@ export function Chat() {
     if (!sending) textareaRef.current?.focus();
   }, [sending]);
 
+  useEffect(() => {
+    if (!isMobile || !tripPanelOpen) return;
+
+    const toggleEl = tripToggleButtonRef.current;
+    document.body.style.overflow = "hidden";
+    tripCloseButtonRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTripPanelOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+      toggleEl?.focus();
+    };
+  }, [isMobile, tripPanelOpen]);
+
   useAutoResizeTextarea(textareaRef, draft);
 
   const { conversations, updateTitleLocally } = useConversations();
@@ -89,6 +113,7 @@ export function Chat() {
           };
         });
         if (conversationTitle) updateTitleLocally(conversation.id, conversationTitle);
+        if (usedTripTool(assistantMessage.tool_calls_json)) setTripPanelOpen(true);
         setTripRefreshSignal((n) => n + 1);
       } catch {
         setConversation((prev) =>
@@ -175,8 +200,20 @@ export function Chat() {
     );
 
   return (
-    <div className="chat-layout">
+    <div className={`chat-layout${tripPanelOpen ? " chat-trip-open" : ""}`}>
       <div className="chat-page">
+        <div className="chat-page-header">
+          <button
+            ref={tripToggleButtonRef}
+            type="button"
+            className="trip-panel-toggle"
+            onClick={() => setTripPanelOpen((v) => !v)}
+            aria-pressed={tripPanelOpen}
+          >
+            Trip plan
+          </button>
+        </div>
+
         <div className="message-list">
           {conversation.messages.length === 0 && (
             <p className="chat-empty">Say hello to start planning your trip.</p>
@@ -231,12 +268,34 @@ export function Chat() {
         </div>
       </div>
 
-      <TripPlanPanel refreshSignal={tripRefreshSignal} />
+      <div className="trip-panel-wrapper" inert={!tripPanelOpen}>
+        <button
+          ref={tripCloseButtonRef}
+          type="button"
+          className="trip-panel-close"
+          onClick={() => setTripPanelOpen(false)}
+          aria-label="Close trip plan"
+        >
+          &times;
+        </button>
+        <TripPlanPanel refreshSignal={tripRefreshSignal} />
+      </div>
     </div>
   );
 }
 
 const LIVE_DATA_TOOLS = new Set(["get_exchange_rate", "get_current_weather", "get_public_holidays"]);
+const TRIP_TOOLS = new Set(["update_trip_plan", "set_trip_day"]);
+
+function usedTripTool(toolCallsJson: string | null): boolean {
+  if (!toolCallsJson) return false;
+  try {
+    const calls = JSON.parse(toolCallsJson) as { name: string }[];
+    return calls.some((c) => TRIP_TOOLS.has(c.name));
+  } catch {
+    return false;
+  }
+}
 
 function toolNames(toolCallsJson: string | null): string[] {
   if (!toolCallsJson) return [];

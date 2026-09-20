@@ -47,7 +47,7 @@ export function Home() {
 
   return (
     <div className="empty-state">
-      <h1>Welcome to Travel Advisor</h1>
+      <h1>Welcome to Atlas</h1>
       <p>Start a new conversation to begin planning your trip.</p>
 
       <div className="chat-input">
