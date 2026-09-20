@@ -380,3 +380,44 @@ button:disabled {
   margin: 4px 0 0;
   padding-left: 18px;
 }
+
+.settings-hint {
+  opacity: 0.8;
+  max-width: 640px;
+}
+
+.settings-prompt {
+  width: 100%;
+  max-width: 640px;
+  font: inherit;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.settings-status {
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.settings-saved {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.settings-meta {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
