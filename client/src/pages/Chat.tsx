@@ -18,10 +18,6 @@ export function Chat() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setConversation(null);
-    setNotFound(false);
-    setLoadError(null);
-
     api
       .getConversation(conversationId)
       .then(setConversation)
