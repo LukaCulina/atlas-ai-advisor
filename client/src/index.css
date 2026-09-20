@@ -8,6 +8,12 @@
   --accent-contrast: #fff;
   --danger: #b91c1c;
 
+  /* Shared de-emphasis scale for secondary/muted text, so components don't
+     each pick their own one-off opacity value. */
+  --opacity-muted-strong: 0.85;
+  --opacity-muted: 0.7;
+  --opacity-muted-faint: 0.6;
+
   font: 16px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
   color-scheme: light dark;
   color: var(--text);
@@ -102,7 +108,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 8px;
-  opacity: 0.75;
+  opacity: var(--opacity-muted);
 }
 
 .app-shell {
@@ -134,7 +140,7 @@ button:disabled {
 
 .app-header nav a {
   text-decoration: none;
-  opacity: 0.75;
+  opacity: var(--opacity-muted);
 }
 
 .app-header nav a.nav-active {
@@ -203,7 +209,7 @@ button:disabled {
 .conversation-meta {
   font-size: 0.85rem;
   color: var(--text);
-  opacity: 0.7;
+  opacity: var(--opacity-muted);
 }
 
 .delete-button {
@@ -239,7 +245,7 @@ button:disabled {
 
 .delete-confirm-warning {
   font-size: 0.8rem;
-  opacity: 0.75;
+  opacity: var(--opacity-muted);
 }
 
 .chat-layout {
@@ -301,7 +307,7 @@ button:disabled {
 }
 
 .chat-empty {
-  opacity: 0.7;
+  opacity: var(--opacity-muted);
 }
 
 .message {
@@ -451,7 +457,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 8px;
-  opacity: 0.7;
+  opacity: var(--opacity-muted);
   font-style: italic;
 }
 
@@ -475,7 +481,7 @@ button:disabled {
 
 .message-tools {
   font-size: 0.8rem;
-  opacity: 0.6;
+  opacity: var(--opacity-muted-faint);
   margin-top: 2px;
 }
 
@@ -486,14 +492,24 @@ button:disabled {
   padding-top: 12px;
 }
 
-.chat-input textarea {
-  flex: 1;
+/* Shared base for every text input/textarea in the app; each context below
+   only overrides what actually differs (padding, resize, sizing). */
+.chat-input textarea,
+.settings-prompt,
+.trip-form input,
+.trip-form textarea,
+.trip-day-form input,
+.trip-day-form textarea {
   font: inherit;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
+}
+
+.chat-input textarea {
+  flex: 1;
   resize: none;
 }
 
@@ -503,7 +519,7 @@ button:disabled {
 
 .trip-notes {
   white-space: pre-wrap;
-  opacity: 0.85;
+  opacity: var(--opacity-muted-strong);
 }
 
 .trip-form,
@@ -520,19 +536,15 @@ button:disabled {
   flex-direction: column;
   gap: 4px;
   font-size: 0.85rem;
-  opacity: 0.85;
+  opacity: var(--opacity-muted-strong);
 }
 
 .trip-form input,
 .trip-form textarea,
 .trip-day-form input,
 .trip-day-form textarea {
-  font: inherit;
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
 }
 
 .trip-form-actions {
@@ -577,25 +589,21 @@ button:disabled {
 }
 
 .trip-empty {
-  opacity: 0.7;
+  opacity: var(--opacity-muted);
   margin: 0 0 12px;
 }
 
 .settings-hint {
   display: block;
-  opacity: 0.8;
+  opacity: var(--opacity-muted-strong);
   max-width: 640px;
 }
 
 .settings-prompt {
   width: 100%;
   max-width: 640px;
-  font: inherit;
   padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
   background: var(--bg-subtle);
-  color: var(--text);
   resize: vertical;
   box-sizing: border-box;
 }
@@ -609,7 +617,7 @@ button:disabled {
 
 .settings-status {
   font-size: 0.9rem;
-  opacity: 0.75;
+  opacity: var(--opacity-muted);
 }
 
 .settings-saved {
@@ -620,5 +628,5 @@ button:disabled {
 .settings-meta {
   margin-top: 16px;
   font-size: 0.85rem;
-  opacity: 0.6;
+  opacity: var(--opacity-muted-faint);
 }

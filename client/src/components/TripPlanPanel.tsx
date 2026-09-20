@@ -69,6 +69,12 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
 
   const saveTrip = async () => {
     setActionError(null);
+
+    if (tripForm.start_date && tripForm.end_date && tripForm.end_date < tripForm.start_date) {
+      setActionError("End date can't be before the start date");
+      return;
+    }
+
     setSavingTrip(true);
     try {
       const updated = await api.updateTrip({
