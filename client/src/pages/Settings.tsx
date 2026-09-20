@@ -35,19 +35,25 @@ export function Settings() {
   };
 
   if (error && !settings) return <p className="error">Failed to load settings: {error}</p>;
-  if (!settings) return <p>Loading settings...</p>;
+  if (!settings)
+    return (
+      <p className="loading-state">
+        <span className="spinner" /> Loading settings...
+      </p>
+    );
 
   const dirty = prompt !== settings.system_prompt;
 
   return (
     <div>
       <h1>Settings</h1>
-      <p className="settings-hint">
+      <label className="settings-hint" htmlFor="settings-system-prompt">
         This is the advisor's system prompt — its instructions for how to behave. Changes take effect on the very
         next message, in every conversation, with no restart needed.
-      </p>
+      </label>
 
       <textarea
+        id="settings-system-prompt"
         className="settings-prompt"
         rows={16}
         value={prompt}

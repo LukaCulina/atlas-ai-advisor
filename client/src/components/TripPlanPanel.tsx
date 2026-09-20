@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type TripDay, type TripWithDays } from "../api/client";
 import { formatDate } from "../utils/dates";
 
@@ -24,7 +24,8 @@ const emptyDayForm: DayFormState = { day_number: "", date: "", summary: "", acti
 
 export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
   const [trip, setTrip] = useState<TripWithDays | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [editingTrip, setEditingTrip] = useState(false);
   const [tripForm, setTripForm] = useState<TripFormState>({
@@ -34,14 +35,26 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
     notes: "",
   });
   const [savingTrip, setSavingTrip] = useState(false);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
 
   const [editingDayId, setEditingDayId] = useState<number | "new" | null>(null);
   const [dayForm, setDayForm] = useState<DayFormState>(emptyDayForm);
   const [savingDay, setSavingDay] = useState(false);
+  const [confirmingDeleteDayId, setConfirmingDeleteDayId] = useState<number | null>(null);
+  const [deletingDayId, setDeletingDayId] = useState<number | null>(null);
+  const dayNumberInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    api.getTrip().then(setTrip).catch((err) => setError(err instanceof Error ? err.message : String(err)));
+    api.getTrip().then(setTrip).catch((err) => setLoadError(err instanceof Error ? err.message : String(err)));
   }, [refreshSignal]);
+
+  useEffect(() => {
+    if (editingTrip) destinationInputRef.current?.focus();
+  }, [editingTrip]);
+
+  useEffect(() => {
+    if (editingDayId !== null) dayNumberInputRef.current?.focus();
+  }, [editingDayId]);
 
   const startEditTrip = () => {
     if (!trip) return;
@@ -55,6 +68,7 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
   };
 
   const saveTrip = async () => {
+    setActionError(null);
     setSavingTrip(true);
     try {
       const updated = await api.updateTrip({
@@ -66,7 +80,7 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
       setTrip((prev) => (prev ? { ...prev, ...updated } : prev));
       setEditingTrip(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActionError(err instanceof Error ? err.message : String(err));
     } finally {
       setSavingTrip(false);
     }
@@ -89,9 +103,10 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
   };
 
   const saveDay = async () => {
+    setActionError(null);
     const dayNumber = Number(dayForm.day_number);
     if (!Number.isInteger(dayNumber) || dayNumber < 1) {
-      setError("Day number must be a positive whole number");
+      setActionError("Day number must be a positive whole number");
       return;
     }
 
@@ -121,33 +136,46 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
       setTrip(refreshed);
       setEditingDayId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActionError(err instanceof Error ? err.message : String(err));
     } finally {
       setSavingDay(false);
     }
   };
 
   const deleteDay = async (id: number) => {
+    setActionError(null);
+    setDeletingDayId(id);
     try {
       await api.deleteTripDay(id);
       setTrip((prev) => (prev ? { ...prev, days: prev.days.filter((d) => d.id !== id) } : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActionError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setConfirmingDeleteDayId(null);
+      setDeletingDayId(null);
     }
   };
 
-  if (error) return <aside className="trip-panel error">Trip plan error: {error}</aside>;
-  if (!trip) return <aside className="trip-panel">Loading trip plan...</aside>;
+  if (loadError) return <aside className="trip-panel error">Trip plan error: {loadError}</aside>;
+  if (!trip)
+    return (
+      <aside className="trip-panel loading-state">
+        <span className="spinner" /> Loading trip plan...
+      </aside>
+    );
 
   return (
     <aside className="trip-panel">
       <h2>Trip plan</h2>
+
+      {actionError && <p className="error">{actionError}</p>}
 
       {editingTrip ? (
         <div className="trip-form">
           <label>
             Destination
             <input
+              ref={destinationInputRef}
               value={tripForm.destination}
               onChange={(e) => setTripForm({ ...tripForm, destination: e.target.value })}
             />
@@ -204,11 +232,12 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
       )}
 
       <h3>Day-by-day</h3>
+      {trip.days.length === 0 && editingDayId === null && <p className="trip-empty">No days planned yet.</p>}
       <ul className="trip-days">
         {trip.days.map((day) =>
           editingDayId === day.id ? (
             <li key={day.id} className="trip-day-form">
-              <DayFormFields dayForm={dayForm} setDayForm={setDayForm} />
+              <DayFormFields dayForm={dayForm} setDayForm={setDayForm} dayNumberInputRef={dayNumberInputRef} />
               <div className="trip-form-actions">
                 <button onClick={saveDay} disabled={savingDay}>
                   {savingDay ? "Saving..." : "Save"}
@@ -225,12 +254,32 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
                   Day {day.day_number}
                   {day.date ? ` — ${formatDate(day.date)}` : ""}
                 </strong>
-                <span className="trip-day-actions">
-                  <button onClick={() => startEditDay(day)}>Edit</button>
-                  <button className="delete-button" onClick={() => deleteDay(day.id)}>
-                    Delete
-                  </button>
-                </span>
+                {confirmingDeleteDayId === day.id ? (
+                  <span className="delete-confirm">
+                    <span className="delete-confirm-warning">This can't be undone.</span>
+                    <button
+                      className="delete-button-confirm"
+                      onClick={() => deleteDay(day.id)}
+                      disabled={deletingDayId === day.id}
+                    >
+                      {deletingDayId === day.id ? "Deleting..." : "Confirm delete"}
+                    </button>
+                    <button onClick={() => setConfirmingDeleteDayId(null)} disabled={deletingDayId === day.id}>
+                      Cancel
+                    </button>
+                  </span>
+                ) : (
+                  <span className="trip-day-actions">
+                    <button onClick={() => startEditDay(day)}>Edit</button>
+                    <button
+                      className="delete-button"
+                      onClick={() => setConfirmingDeleteDayId(day.id)}
+                      aria-label={`Delete day ${day.day_number}`}
+                    >
+                      Delete
+                    </button>
+                  </span>
+                )}
               </div>
               {day.summary && <p>{day.summary}</p>}
               {day.activities.length > 0 && (
@@ -247,7 +296,7 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
 
       {editingDayId === "new" ? (
         <div className="trip-day-form">
-          <DayFormFields dayForm={dayForm} setDayForm={setDayForm} />
+          <DayFormFields dayForm={dayForm} setDayForm={setDayForm} dayNumberInputRef={dayNumberInputRef} />
           <div className="trip-form-actions">
             <button onClick={saveDay} disabled={savingDay}>
               {savingDay ? "Saving..." : "Save"}
@@ -267,15 +316,18 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
 function DayFormFields({
   dayForm,
   setDayForm,
+  dayNumberInputRef,
 }: {
   dayForm: DayFormState;
   setDayForm: (form: DayFormState) => void;
+  dayNumberInputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <>
       <label>
         Day number
         <input
+          ref={dayNumberInputRef}
           type="number"
           min={1}
           value={dayForm.day_number}

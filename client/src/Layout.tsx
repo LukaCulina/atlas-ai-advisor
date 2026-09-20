@@ -1,4 +1,6 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
+
+const navLinkClassName = ({ isActive }: { isActive: boolean }) => (isActive ? "nav-active" : undefined);
 
 export function Layout() {
   return (
@@ -8,8 +10,12 @@ export function Layout() {
           Travel Advisor
         </Link>
         <nav>
-          <Link to="/">Conversations</Link>
-          <Link to="/settings">Settings</Link>
+          <NavLink to="/" end className={navLinkClassName}>
+            Conversations
+          </NavLink>
+          <NavLink to="/settings" className={navLinkClassName}>
+            Settings
+          </NavLink>
         </nav>
       </header>
       <main className="app-main">

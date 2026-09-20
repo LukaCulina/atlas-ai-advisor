@@ -5,43 +5,53 @@ import { formatDateTime } from "../utils/dates";
 
 export function ConversationList() {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     api
       .listConversations()
       .then(setConversations)
-      .catch((err) => setError(err.message));
+      .catch((err) => setLoadError(err.message));
   }, []);
 
   const handleCreate = async () => {
     setCreating(true);
-    setError(null);
+    setActionError(null);
     try {
       const conversation = await api.createConversation();
       navigate(`/c/${conversation.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActionError(err instanceof Error ? err.message : String(err));
       setCreating(false);
     }
   };
 
   const handleDelete = async (id: number) => {
+    setActionError(null);
+    setDeletingId(id);
     try {
       await api.deleteConversation(id);
       setConversations((prev) => (prev ? prev.filter((c) => c.id !== id) : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActionError(err instanceof Error ? err.message : String(err));
     } finally {
       setConfirmingId(null);
+      setDeletingId(null);
     }
   };
 
-  if (error) return <p className="error">Failed to load conversations: {error}</p>;
-  if (!conversations) return <p>Loading conversations...</p>;
+  if (loadError) return <p className="error">Failed to load conversations: {loadError}</p>;
+  if (!conversations)
+    return (
+      <p className="loading-state">
+        <span className="spinner" /> Loading conversations...
+      </p>
+    );
 
   return (
     <div>
@@ -51,6 +61,8 @@ export function ConversationList() {
           {creating ? "Starting..." : "New conversation"}
         </button>
       </div>
+
+      {actionError && <p className="error">{actionError}</p>}
 
       {conversations.length === 0 ? (
         <p>No conversations yet — start one to begin planning your trip.</p>
@@ -64,10 +76,17 @@ export function ConversationList() {
               </Link>
               {confirmingId === c.id ? (
                 <span className="delete-confirm">
-                  <button className="delete-button" onClick={() => handleDelete(c.id)}>
-                    Confirm delete
+                  <span className="delete-confirm-warning">This can't be undone.</span>
+                  <button
+                    className="delete-button-confirm"
+                    onClick={() => handleDelete(c.id)}
+                    disabled={deletingId === c.id}
+                  >
+                    {deletingId === c.id ? "Deleting..." : "Confirm delete"}
                   </button>
-                  <button onClick={() => setConfirmingId(null)}>Cancel</button>
+                  <button onClick={() => setConfirmingId(null)} disabled={deletingId === c.id}>
+                    Cancel
+                  </button>
                 </span>
               ) : (
                 <button

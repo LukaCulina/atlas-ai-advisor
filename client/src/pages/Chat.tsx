@@ -5,19 +5,22 @@ import remarkGfm from "remark-gfm";
 import { api, ApiError, type ConversationWithMessages, type Message } from "../api/client";
 import { TripPlanPanel } from "../components/TripPlanPanel";
 
+type DisplayMessage = Message & { status?: "sending" | "failed" };
+type DisplayConversation = Omit<ConversationWithMessages, "messages"> & { messages: DisplayMessage[] };
+
 export function Chat() {
   const { id } = useParams<{ id: string }>();
   const conversationId = Number(id);
 
-  const [conversation, setConversation] = useState<ConversationWithMessages | null>(null);
+  const [conversation, setConversation] = useState<DisplayConversation | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [sendError, setSendError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [tripRefreshSignal, setTripRefreshSignal] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     api
@@ -36,33 +39,63 @@ export function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation?.messages.length]);
 
+  useEffect(() => {
+    // Wait for the re-render that clears `disabled` before focusing — a
+    // disabled textarea silently refuses focus().
+    if (!sending) textareaRef.current?.focus();
+  }, [sending]);
+
+  const sendContent = async (content: string, tempId: number) => {
+    if (!conversation) return;
+    setSending(true);
+
+    try {
+      const assistantMessage = await api.sendMessage(conversation.id, content);
+      setConversation((prev) => {
+        if (!prev) return prev;
+        const messages = prev.messages.map((m) => (m.id === tempId ? { ...m, status: undefined } : m));
+        return { ...prev, messages: [...messages, assistantMessage] };
+      });
+      setTripRefreshSignal((n) => n + 1);
+    } catch {
+      setConversation((prev) =>
+        prev
+          ? { ...prev, messages: prev.messages.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)) }
+          : prev
+      );
+    } finally {
+      setSending(false);
+    }
+  };
+
   const handleSend = async () => {
     const content = draft.trim();
     if (!content || !conversation || sending) return;
 
-    const optimisticUserMessage: Message = {
-      id: -Date.now(),
+    const tempId = -Date.now();
+    const optimisticUserMessage: DisplayMessage = {
+      id: tempId,
       conversation_id: conversation.id,
       role: "user",
       content,
       tool_calls_json: null,
       created_at: new Date().toISOString(),
+      status: "sending",
     };
 
     setConversation((prev) => (prev ? { ...prev, messages: [...prev.messages, optimisticUserMessage] } : prev));
     setDraft("");
-    setSendError(null);
-    setSending(true);
+    await sendContent(content, tempId);
+  };
 
-    try {
-      const assistantMessage = await api.sendMessage(conversation.id, content);
-      setConversation((prev) => (prev ? { ...prev, messages: [...prev.messages, assistantMessage] } : prev));
-      setTripRefreshSignal((n) => n + 1);
-    } catch (err) {
-      setSendError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSending(false);
-    }
+  const handleRetry = (message: DisplayMessage) => {
+    if (sending) return;
+    setConversation((prev) =>
+      prev
+        ? { ...prev, messages: prev.messages.map((m) => (m.id === message.id ? { ...m, status: "sending" } : m)) }
+        : prev
+    );
+    sendContent(message.content, message.id);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -82,7 +115,12 @@ export function Chat() {
   }
 
   if (loadError) return <p className="error">Failed to load conversation: {loadError}</p>;
-  if (!conversation) return <p>Loading conversation...</p>;
+  if (!conversation)
+    return (
+      <p className="loading-state">
+        <span className="spinner" /> Loading conversation...
+      </p>
+    );
 
   return (
     <div>
@@ -94,10 +132,18 @@ export function Chat() {
               <p className="chat-empty">Say hello to start planning your trip.</p>
             )}
             {conversation.messages.map((m) => (
-              <div key={m.id} className={`message message-${m.role}`}>
+              <div key={m.id} className={`message message-${m.role}${m.status === "failed" ? " message-failed" : ""}`}>
                 <div className="message-bubble">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                 </div>
+                {m.status === "failed" && (
+                  <div className="message-failed-note">
+                    Failed to send.
+                    <button onClick={() => handleRetry(m)} disabled={sending}>
+                      Retry
+                    </button>
+                  </div>
+                )}
                 {toolNames(m.tool_calls_json).length > 0 && (
                   <div className="message-tools">Used live data: {toolNames(m.tool_calls_json).join(", ")}</div>
                 )}
@@ -105,16 +151,21 @@ export function Chat() {
             ))}
             {sending && (
               <div className="message message-assistant">
-                <div className="message-bubble message-pending">Thinking...</div>
+                <div className="message-bubble message-pending">
+                  <span className="spinner" /> Thinking...
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          {sendError && <p className="error">{sendError}</p>}
-
           <div className="chat-input">
+            <label htmlFor="chat-message-input" className="visually-hidden">
+              Message
+            </label>
             <textarea
+              id="chat-message-input"
+              ref={textareaRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
