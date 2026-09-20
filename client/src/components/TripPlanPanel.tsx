@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type TripDay, type TripWithDays } from "../api/client";
+import { formatDate } from "../utils/dates";
 
 interface TripPlanPanelProps {
   refreshSignal: number;
@@ -191,7 +192,11 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
           </p>
           <p>
             <strong>Dates:</strong>{" "}
-            {trip.start_date || trip.end_date ? `${trip.start_date ?? "?"} to ${trip.end_date ?? "?"}` : "Not set yet"}
+            {trip.start_date || trip.end_date
+              ? `${trip.start_date ? formatDate(trip.start_date) : "?"} to ${
+                  trip.end_date ? formatDate(trip.end_date) : "?"
+                }`
+              : "Not set yet"}
           </p>
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}
           <button onClick={startEditTrip}>Edit</button>
@@ -218,7 +223,7 @@ export function TripPlanPanel({ refreshSignal }: TripPlanPanelProps) {
               <div className="trip-day-header">
                 <strong>
                   Day {day.day_number}
-                  {day.date ? ` — ${day.date}` : ""}
+                  {day.date ? ` — ${formatDate(day.date)}` : ""}
                 </strong>
                 <span className="trip-day-actions">
                   <button onClick={() => startEditDay(day)}>Edit</button>

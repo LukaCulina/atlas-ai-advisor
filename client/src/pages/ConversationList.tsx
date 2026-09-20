@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, type Conversation } from "../api/client";
+import { formatDateTime } from "../utils/dates";
 
 export function ConversationList() {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
@@ -59,7 +60,7 @@ export function ConversationList() {
             <li key={c.id} className="conversation-row">
               <Link to={`/c/${c.id}`} className="conversation-link">
                 <span className="conversation-title">{c.title}</span>
-                <span className="conversation-meta">Updated {formatDate(c.updated_at)}</span>
+                <span className="conversation-meta">Updated {formatDateTime(c.updated_at)}</span>
               </Link>
               {confirmingId === c.id ? (
                 <span className="delete-confirm">
@@ -83,10 +84,4 @@ export function ConversationList() {
       )}
     </div>
   );
-}
-
-function formatDate(sqliteDatetime: string): string {
-  // SQLite's datetime('now') yields "YYYY-MM-DD HH:MM:SS" in UTC with no timezone marker.
-  const date = new Date(sqliteDatetime.replace(" ", "T") + "Z");
-  return date.toLocaleString();
 }
