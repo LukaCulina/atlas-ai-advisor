@@ -18,6 +18,10 @@ export interface ConversationWithMessages extends Conversation {
   messages: Message[];
 }
 
+export interface SendMessageResponse extends Message {
+  conversationTitle?: string;
+}
+
 export interface TripDay {
   id: number;
   day_number: number;
@@ -88,7 +92,7 @@ export const api = {
     request<void>(`/conversations/${id}`, { method: "DELETE" }),
 
   sendMessage: (conversationId: number, content: string) =>
-    request<Message>(`/conversations/${conversationId}/messages`, {
+    request<SendMessageResponse>(`/conversations/${conversationId}/messages`, {
       method: "POST",
       body: JSON.stringify({ content }),
     }),

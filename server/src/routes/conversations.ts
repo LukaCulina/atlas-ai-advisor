@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "../db/db";
 import { ChatMessage } from "../services/openrouter";
 import { runAgent } from "../services/agent";
+import { generateConversationTitle } from "../services/title";
 import { ConversationRow, MessageRow, SettingsRow } from "../db/types";
 
 export const conversationsRouter = Router();
@@ -80,9 +81,21 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
 
   const historyMessages: ChatMessage[] = history.map((m) => ({ role: m.role, content: m.content }));
 
+  const isFirstMessage = history.length === 1;
+  const titlePromise: Promise<string | null> = isFirstMessage
+    ? generateConversationTitle(content).catch((err) => {
+        console.warn("Title generation failed:", err);
+        return null;
+      })
+    : Promise.resolve(null);
+
   let agentResult;
+  let generatedTitle: string | null;
   try {
-    agentResult = await runAgent(settings.system_prompt, historyMessages, conversation.id);
+    [agentResult, generatedTitle] = await Promise.all([
+      runAgent(settings.system_prompt, historyMessages, conversation.id),
+      titlePromise,
+    ]);
   } catch (err) {
     console.error("Agent run failed:", err);
     return res.status(502).json({ error: "Failed to get a response from the advisor" });
@@ -97,11 +110,18 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
       agentResult.toolCalls.length > 0 ? JSON.stringify(agentResult.toolCalls) : null
     );
 
-  db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(conversation.id);
+  if (generatedTitle) {
+    db.prepare("UPDATE conversations SET title = ?, updated_at = datetime('now') WHERE id = ?").run(
+      generatedTitle,
+      conversation.id
+    );
+  } else {
+    db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(conversation.id);
+  }
 
   const assistantMessage = db
     .prepare("SELECT * FROM messages WHERE id = ?")
     .get(assistantResult.lastInsertRowid) as MessageRow;
 
-  res.status(201).json(assistantMessage);
+  res.status(201).json({ ...assistantMessage, ...(generatedTitle ? { conversationTitle: generatedTitle } : {}) });
 });
