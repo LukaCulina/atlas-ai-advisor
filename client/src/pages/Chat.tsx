@@ -236,11 +236,13 @@ export function Chat() {
   );
 }
 
+const LIVE_DATA_TOOLS = new Set(["get_exchange_rate", "get_current_weather", "get_public_holidays"]);
+
 function toolNames(toolCallsJson: string | null): string[] {
   if (!toolCallsJson) return [];
   try {
     const calls = JSON.parse(toolCallsJson) as { name: string }[];
-    return [...new Set(calls.map((c) => c.name))];
+    return [...new Set(calls.map((c) => c.name).filter((name) => LIVE_DATA_TOOLS.has(name)))];
   } catch {
     return [];
   }
