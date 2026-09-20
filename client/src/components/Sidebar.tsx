@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useConversations } from "../hooks/useConversations";
 
@@ -20,6 +20,27 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (openMenuId === null) return;
+
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenuId(null);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openMenuId]);
 
   const handleDelete = async (id: number) => {
     setActionError(null);
@@ -94,12 +115,28 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
                         <span className="conversation-title">{c.title}</span>
                       </Link>
                       <button
-                        className="delete-button"
-                        onClick={() => setConfirmingId(c.id)}
-                        aria-label={`Delete ${c.title}`}
+                        className="conversation-menu-button"
+                        onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}
+                        aria-label={`More options for ${c.title}`}
+                        aria-haspopup="true"
+                        aria-expanded={openMenuId === c.id}
                       >
-                        &times;
+                        &#8942;
                       </button>
+                      {openMenuId === c.id && (
+                        <div className="conversation-menu" ref={menuRef} role="menu">
+                          <button
+                            className="conversation-menu-item conversation-menu-item-danger"
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setConfirmingId(c.id);
+                            }}
+                          >
+                            Delete conversation
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </li>

@@ -349,6 +349,7 @@ button:disabled {
 }
 
 .conversation-row {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -391,6 +392,58 @@ button:disabled {
 
 .delete-button:hover {
   border-color: var(--danger);
+}
+
+.conversation-menu-button {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text);
+  background: transparent;
+  border-color: transparent;
+}
+
+.conversation-menu-button:hover {
+  border-color: transparent;
+  color: var(--text-h);
+}
+
+.conversation-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 30;
+  margin-top: 2px;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 4px;
+}
+
+.conversation-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-h);
+  font-size: 0.9rem;
+}
+
+.conversation-menu-item:hover {
+  background: var(--bg-subtle);
+  border-color: transparent;
+}
+
+.conversation-menu-item-danger {
+  color: var(--danger);
 }
 
 .delete-button-confirm {
