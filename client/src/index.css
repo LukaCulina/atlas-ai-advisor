@@ -349,6 +349,19 @@ button:disabled {
   text-align: left;
 }
 
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  font-size: 0.85rem;
+  border-radius: 16px;
+  padding: 6px 14px;
+}
+
 .conversation-list {
   list-style: none;
   margin: 0;
