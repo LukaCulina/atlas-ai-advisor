@@ -212,7 +212,9 @@ button:disabled {
 }
 
 .sidebar-navlink {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
   color: var(--text);
   font-size: 0.95rem;

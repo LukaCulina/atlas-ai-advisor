@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import type { Conversation } from "../api/client";
 import { useConversations } from "../hooks/useConversations";
 import { PinIcon } from "./PinIcon";
+import { TripIcon } from "./TripIcon";
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -233,6 +234,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
       </Link>
 
       <NavLink to="/trip" className={sidebarNavLinkClassName}>
+        <TripIcon />
         Trip
       </NavLink>
 
@@ -251,16 +253,14 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
           <p className="sidebar-empty">No conversations yet.</p>
         ) : (
           <>
-            {conversations.some((c) => c.pinned) ? (
+            {conversations.some((c) => c.pinned) && (
               <>
                 <p className="sidebar-section-label">Pinned</p>
                 <ul className="conversation-list">{conversations.filter((c) => c.pinned).map(renderRow)}</ul>
-                {conversations.some((c) => !c.pinned) && <p className="sidebar-section-label">Recents</p>}
               </>
-            ) : null}
-            {conversations.some((c) => !c.pinned) && (
-              <ul className="conversation-list">{conversations.filter((c) => !c.pinned).map(renderRow)}</ul>
             )}
+            <p className="sidebar-section-label">Recents</p>
+            <ul className="conversation-list">{conversations.filter((c) => !c.pinned).map(renderRow)}</ul>
           </>
         )}
       </div>
