@@ -139,6 +139,7 @@ export function Chat() {
         role: "user",
         content,
         tool_calls_json: null,
+        suggestions_json: null,
         created_at: new Date().toISOString(),
         status: "sending",
       };
