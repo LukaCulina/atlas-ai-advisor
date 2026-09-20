@@ -3,6 +3,7 @@ import { getExchangeRate } from "./tools/exchangeRate";
 import { getCurrentWeather } from "./tools/weather";
 import { rememberTravelerFact, getAllTravelerFacts } from "./tools/memory";
 import { updateTripPlan, setTripDay, getTripWithDays } from "./tools/tripPlan";
+import { getPublicHolidays } from "./tools/holidays";
 
 const TOOLS: ToolDefinition[] = [
   {
@@ -94,6 +95,25 @@ const TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_public_holidays",
+      description:
+        "Get the public holidays for a country in a given year — useful for spotting long weekends or days when businesses may be closed during a trip.",
+      parameters: {
+        type: "object",
+        properties: {
+          country_code: {
+            type: "string",
+            description: "Two-letter ISO 3166-1 country code, e.g. FR for France, JP for Japan",
+          },
+          year: { type: "integer", description: "Four-digit year; defaults to the current year if omitted" },
+        },
+        required: ["country_code"],
+      },
+    },
+  },
 ];
 
 async function executeTool(name: string, args: Record<string, unknown>, conversationId: number): Promise<unknown> {
@@ -121,6 +141,8 @@ async function executeTool(name: string, args: Record<string, unknown>, conversa
         summary: typeof args.summary === "string" ? args.summary : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map(String) : undefined,
       });
+    case "get_public_holidays":
+      return getPublicHolidays(String(args.country_code), typeof args.year === "number" ? args.year : undefined);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

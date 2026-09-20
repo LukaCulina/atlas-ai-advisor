@@ -30,7 +30,7 @@
     --border: #322f3a;
     --accent: #a78bfa;
     --accent-contrast: #131217;
-    --danger: #f87171;
+    --danger: #e24848;
   }
 }
 
@@ -194,13 +194,17 @@ button:disabled {
   display: block;
   margin: 0 4px 12px;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 15px;
   border: 1px solid var(--border);
   background: var(--bg-subtle);
   color: var(--text-h);
   text-decoration: none;
   text-align: center;
   font-weight: 500;
+  -webkit-border-radius: 15px;
+  -moz-border-radius: 15px;
+  -ms-border-radius: 15px;
+  -o-border-radius: 15px;
 }
 
 .sidebar-new-chat:hover {
@@ -305,10 +309,10 @@ button:disabled {
 
 .drawer-close {
   align-self: flex-end;
-  margin-bottom: 12px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   line-height: 1;
   padding: 4px 10px;
+  border: none;
 }
 
 .app-main {
@@ -349,9 +353,8 @@ button:disabled {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: 15px;
+  padding-left: 10px;
 }
 
 .conversation-row:hover {
@@ -360,7 +363,6 @@ button:disabled {
 
 .conversation-row-active {
   background: var(--bg);
-  border-color: var(--border);
 }
 
 .conversation-link {
@@ -521,11 +523,11 @@ button:disabled {
 }
 
 /* Markdown content rendered inside a message bubble. */
-.message-bubble > *:first-child {
+.message-bubble>*:first-child {
   margin-top: 0;
 }
 
-.message-bubble > *:last-child {
+.message-bubble>*:last-child {
   margin-bottom: 0;
 }
 
@@ -574,8 +576,8 @@ button:disabled {
   line-height: 1.5;
 }
 
-.message-bubble li > ul,
-.message-bubble li > ol {
+.message-bubble li>ul,
+.message-bubble li>ol {
   margin: 0.25em 0;
 }
 
