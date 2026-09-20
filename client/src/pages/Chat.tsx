@@ -231,9 +231,7 @@ export function Chat() {
                   </button>
                 </div>
               )}
-              {toolNames(m.tool_calls_json).length > 0 && (
-                <div className="message-tools">Used live data: {toolNames(m.tool_calls_json).join(", ")}</div>
-              )}
+              {usedLiveData(m.tool_calls_json) && <div className="message-tools">✓ Live data used</div>}
             </div>
           ))}
           {sending && (
@@ -287,22 +285,20 @@ export function Chat() {
 const LIVE_DATA_TOOLS = new Set(["get_exchange_rate", "get_current_weather", "get_public_holidays"]);
 const TRIP_TOOLS = new Set(["update_trip_plan", "set_trip_day"]);
 
-function usedTripTool(toolCallsJson: string | null): boolean {
+function usedAnyTool(toolCallsJson: string | null, toolNames: Set<string>): boolean {
   if (!toolCallsJson) return false;
   try {
     const calls = JSON.parse(toolCallsJson) as { name: string }[];
-    return calls.some((c) => TRIP_TOOLS.has(c.name));
+    return calls.some((c) => toolNames.has(c.name));
   } catch {
     return false;
   }
 }
 
-function toolNames(toolCallsJson: string | null): string[] {
-  if (!toolCallsJson) return [];
-  try {
-    const calls = JSON.parse(toolCallsJson) as { name: string }[];
-    return [...new Set(calls.map((c) => c.name).filter((name) => LIVE_DATA_TOOLS.has(name)))];
-  } catch {
-    return [];
-  }
+function usedLiveData(toolCallsJson: string | null): boolean {
+  return usedAnyTool(toolCallsJson, LIVE_DATA_TOOLS);
+}
+
+function usedTripTool(toolCallsJson: string | null): boolean {
+  return usedAnyTool(toolCallsJson, TRIP_TOOLS);
 }
