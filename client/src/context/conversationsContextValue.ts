@@ -9,6 +9,7 @@ export interface ConversationsContextValue {
   deleteConversation: (id: number) => Promise<void>;
   updateTitleLocally: (id: number, title: string) => void;
   renameConversation: (id: number, title: string) => Promise<void>;
+  togglePin: (id: number, pinned: boolean) => Promise<void>;
 }
 
 export const ConversationsContext = createContext<ConversationsContextValue | null>(null);

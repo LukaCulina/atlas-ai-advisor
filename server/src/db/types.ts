@@ -1,6 +1,7 @@
 export interface ConversationRow {
   id: number;
   title: string;
+  pinned: number;
   created_at: string;
   updated_at: string;
 }

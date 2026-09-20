@@ -250,6 +250,16 @@ button:disabled {
   opacity: var(--opacity-muted);
 }
 
+.sidebar-section-label {
+  margin: 4px 4px 2px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: var(--opacity-muted-faint);
+}
+
 .sidebar-error {
   margin: 0 4px;
 }
@@ -393,6 +403,14 @@ button:disabled {
 
 .delete-button:hover {
   border-color: var(--danger);
+}
+
+.conversation-pin-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--accent);
+  opacity: var(--opacity-muted-strong);
 }
 
 .conversation-menu-button {

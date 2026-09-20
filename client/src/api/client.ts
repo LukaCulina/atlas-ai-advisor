@@ -1,6 +1,7 @@
 export interface Conversation {
   id: number;
   title: string;
+  pinned: 0 | 1;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +91,9 @@ export const api = {
 
   renameConversation: (id: number, title: string) =>
     request<Conversation>(`/conversations/${id}`, { method: "PATCH", body: JSON.stringify({ title }) }),
+
+  pinConversation: (id: number, pinned: boolean) =>
+    request<Conversation>(`/conversations/${id}`, { method: "PATCH", body: JSON.stringify({ pinned }) }),
 
   deleteConversation: (id: number) =>
     request<void>(`/conversations/${id}`, { method: "DELETE" }),

@@ -46,6 +46,19 @@ export function ConversationsProvider({ children }: { children: React.ReactNode 
     setConversations((prev) => (prev ? prev.map((c) => (c.id === id ? { ...c, title } : c)) : prev));
   }, []);
 
+  const togglePin = useCallback(async (id: number, pinned: boolean) => {
+    await api.pinConversation(id, pinned);
+    const pinnedValue: 0 | 1 = pinned ? 1 : 0;
+    setConversations((prev) => {
+      if (!prev) return prev;
+      const updated = prev.map((c) => (c.id === id ? { ...c, pinned: pinnedValue } : c));
+      return [...updated].sort((a, b) => {
+        if (a.pinned !== b.pinned) return b.pinned - a.pinned;
+        return b.updated_at.localeCompare(a.updated_at);
+      });
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       conversations,
@@ -55,8 +68,18 @@ export function ConversationsProvider({ children }: { children: React.ReactNode 
       deleteConversation,
       updateTitleLocally,
       renameConversation,
+      togglePin,
     }),
-    [conversations, loadError, refresh, createConversation, deleteConversation, updateTitleLocally, renameConversation]
+    [
+      conversations,
+      loadError,
+      refresh,
+      createConversation,
+      deleteConversation,
+      updateTitleLocally,
+      renameConversation,
+      togglePin,
+    ]
   );
 
   return <ConversationsContext.Provider value={value}>{children}</ConversationsContext.Provider>;

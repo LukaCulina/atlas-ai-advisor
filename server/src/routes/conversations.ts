@@ -23,7 +23,7 @@ conversationsRouter.post("/", (req, res) => {
 
 conversationsRouter.get("/", (_req, res) => {
   const conversations = db
-    .prepare("SELECT * FROM conversations ORDER BY updated_at DESC")
+    .prepare("SELECT * FROM conversations ORDER BY pinned DESC, updated_at DESC")
     .all() as ConversationRow[];
 
   res.json(conversations);
@@ -54,15 +54,29 @@ conversationsRouter.patch("/:id", (req, res) => {
     return res.status(404).json({ error: "Conversation not found" });
   }
 
-  const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
-  if (!title) {
-    return res.status(400).json({ error: "title is required" });
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if ("title" in req.body) {
+    const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    if (!title) {
+      return res.status(400).json({ error: "title is required" });
+    }
+    updates.push("title = ?");
+    values.push(title);
   }
 
-  db.prepare("UPDATE conversations SET title = ?, updated_at = datetime('now') WHERE id = ?").run(
-    title,
-    conversation.id
-  );
+  if ("pinned" in req.body) {
+    updates.push("pinned = ?");
+    values.push(req.body.pinned ? 1 : 0);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: "No valid fields to update" });
+  }
+
+  updates.push("updated_at = datetime('now')");
+  db.prepare(`UPDATE conversations SET ${updates.join(", ")} WHERE id = ?`).run(...values, conversation.id);
 
   const updated = db.prepare("SELECT * FROM conversations WHERE id = ?").get(conversation.id) as ConversationRow;
   res.json(updated);
