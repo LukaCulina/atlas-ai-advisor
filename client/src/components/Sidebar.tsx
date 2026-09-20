@@ -15,6 +15,10 @@ interface SidebarProps {
 const sidebarNavLinkClassName = ({ isActive }: { isActive: boolean }) =>
   `sidebar-navlink${isActive ? " nav-active" : ""}`;
 
+// Matches (and slightly exceeds) .conversation-menu's min-width, so the
+// clamping math in toggleMenu has an accurate box size to work with.
+const MENU_WIDTH = 180;
+
 export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: SidebarProps) {
   const { conversations, loadError, deleteConversation, renameConversation, togglePin } = useConversations();
   const location = useLocation();
@@ -23,7 +27,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [openMenu, setOpenMenu] = useState<{ id: number; top: number; right: number } | null>(null);
+  const [openMenu, setOpenMenu] = useState<{ id: number; top: number; left: number } | null>(null);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [savingRenameId, setSavingRenameId] = useState<number | null>(null);
@@ -37,7 +41,11 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
-    setOpenMenu({ id, top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    // Anchor the menu's right edge to the button by default, but clamp to
+    // both viewport edges so it can never render off-screen on a narrow
+    // mobile drawer.
+    const left = Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8);
+    setOpenMenu({ id, top: rect.bottom + 4, left: Math.max(8, left) });
   };
 
   useEffect(() => {
@@ -184,7 +192,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
                 className="conversation-menu"
                 ref={menuRef}
                 role="menu"
-                style={{ top: openMenu.top, right: openMenu.right }}
+                style={{ top: openMenu.top, left: openMenu.left }}
               >
                 <button
                   className="conversation-menu-item"

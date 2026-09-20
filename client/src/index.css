@@ -219,9 +219,9 @@ button:disabled {
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 500;
-  padding: 10px 8px;
+  padding: 5px;
   margin: 0 4px;
-  border-radius: 6px;
+  border-radius: 15px;
   border-left: 3px solid transparent;
 }
 
