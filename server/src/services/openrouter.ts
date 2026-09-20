@@ -24,7 +24,8 @@ export interface ToolDefinition {
 
 export async function createChatCompletion(
   messages: ChatMessage[],
-  tools?: ToolDefinition[]
+  tools?: ToolDefinition[],
+  model?: string
 ): Promise<ChatMessage> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -38,7 +39,7 @@ export async function createChatCompletion(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5",
+      model: model || process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5",
       messages,
       ...(tools ? { tools } : {}),
     }),

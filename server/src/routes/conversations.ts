@@ -3,6 +3,7 @@ import { db } from "../db/db";
 import { ChatMessage } from "../services/openrouter";
 import { runAgent } from "../services/agent";
 import { generateConversationTitle } from "../services/title";
+import { generateFollowUpSuggestions } from "../services/suggestions";
 import { ConversationRow, MessageRow, SettingsRow } from "../db/types";
 
 export const conversationsRouter = Router();
@@ -138,13 +139,21 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     return res.status(502).json({ error: "Failed to get a response from the advisor" });
   }
 
+  const suggestions = await generateFollowUpSuggestions(content, agentResult.content).catch((err) => {
+    console.warn("Suggestion generation failed:", err);
+    return [] as string[];
+  });
+
   const assistantResult = db
-    .prepare("INSERT INTO messages (conversation_id, role, content, tool_calls_json) VALUES (?, ?, ?, ?)")
+    .prepare(
+      "INSERT INTO messages (conversation_id, role, content, tool_calls_json, suggestions_json) VALUES (?, ?, ?, ?, ?)"
+    )
     .run(
       conversation.id,
       "assistant",
       agentResult.content,
-      agentResult.toolCalls.length > 0 ? JSON.stringify(agentResult.toolCalls) : null
+      agentResult.toolCalls.length > 0 ? JSON.stringify(agentResult.toolCalls) : null,
+      suggestions.length > 0 ? JSON.stringify(suggestions) : null
     );
 
   if (generatedTitle) {

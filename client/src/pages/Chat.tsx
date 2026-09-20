@@ -199,6 +199,8 @@ export function Chat() {
       </p>
     );
 
+  const trailingSuggestions = lastSuggestions(conversation.messages);
+
   return (
     <div className={`chat-layout${tripPanelOpen ? " chat-trip-open" : ""}`}>
       <div className="chat-page">
@@ -234,6 +236,15 @@ export function Chat() {
               {usedLiveData(m.tool_calls_json) && <div className="message-tools">✓ Live data used</div>}
             </div>
           ))}
+          {trailingSuggestions.length > 0 && (
+            <div className="suggestion-chips">
+              {trailingSuggestions.map((s) => (
+                <button key={s} type="button" className="suggestion-chip" onClick={() => submitMessage(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           {sending && (
             <div className="message message-assistant">
               <div className="message-bubble message-pending">
@@ -301,4 +312,15 @@ function usedLiveData(toolCallsJson: string | null): boolean {
 
 function usedTripTool(toolCallsJson: string | null): boolean {
   return usedAnyTool(toolCallsJson, TRIP_TOOLS);
+}
+
+function lastSuggestions(messages: DisplayMessage[]): string[] {
+  const last = messages[messages.length - 1];
+  if (!last || last.role !== "assistant" || !last.suggestions_json) return [];
+  try {
+    const parsed = JSON.parse(last.suggestions_json);
+    return Array.isArray(parsed) ? parsed.filter((s): s is string => typeof s === "string") : [];
+  } catch {
+    return [];
+  }
 }

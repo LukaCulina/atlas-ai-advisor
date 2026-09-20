@@ -21,3 +21,8 @@ const conversationColumns = db.prepare("PRAGMA table_info(conversations)").all()
 if (!conversationColumns.some((c) => c.name === "pinned")) {
   db.exec("ALTER TABLE conversations ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0");
 }
+
+const messageColumns = db.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
+if (!messageColumns.some((c) => c.name === "suggestions_json")) {
+  db.exec("ALTER TABLE messages ADD COLUMN suggestions_json TEXT");
+}

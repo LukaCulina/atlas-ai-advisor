@@ -12,6 +12,7 @@ export interface MessageRow {
   role: "user" | "assistant" | "tool";
   content: string;
   tool_calls_json: string | null;
+  suggestions_json: string | null;
   created_at: string;
 }
 

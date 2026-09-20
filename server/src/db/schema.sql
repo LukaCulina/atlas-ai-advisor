@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS messages (
   role TEXT NOT NULL CHECK (role IN ('user','assistant','tool')),
   content TEXT NOT NULL,
   tool_calls_json TEXT,
+  suggestions_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
