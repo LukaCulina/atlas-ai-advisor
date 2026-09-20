@@ -875,8 +875,10 @@ button:disabled {
   max-width: 640px;
   padding: 12px;
   background: var(--bg-subtle);
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden;
   box-sizing: border-box;
+  transition: height 0.1s ease;
 }
 
 .settings-actions {

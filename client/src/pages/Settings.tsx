@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type Settings as SettingsType } from "../api/client";
 import { formatDateTime } from "../utils/dates";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 
 export function Settings() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
@@ -8,6 +9,8 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(textareaRef, prompt, Infinity);
 
   useEffect(() => {
     api
@@ -55,7 +58,8 @@ export function Settings() {
       <textarea
         id="settings-system-prompt"
         className="settings-prompt"
-        rows={16}
+        ref={textareaRef}
+        rows={1}
         value={prompt}
         onChange={(e) => {
           setPrompt(e.target.value);
