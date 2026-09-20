@@ -45,6 +45,29 @@ conversationsRouter.get("/:id", (req, res) => {
   res.json({ ...conversation, messages });
 });
 
+conversationsRouter.patch("/:id", (req, res) => {
+  const conversation = db
+    .prepare("SELECT * FROM conversations WHERE id = ?")
+    .get(req.params.id) as ConversationRow | undefined;
+
+  if (!conversation) {
+    return res.status(404).json({ error: "Conversation not found" });
+  }
+
+  const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+  if (!title) {
+    return res.status(400).json({ error: "title is required" });
+  }
+
+  db.prepare("UPDATE conversations SET title = ?, updated_at = datetime('now') WHERE id = ?").run(
+    title,
+    conversation.id
+  );
+
+  const updated = db.prepare("SELECT * FROM conversations WHERE id = ?").get(conversation.id) as ConversationRow;
+  res.json(updated);
+});
+
 conversationsRouter.delete("/:id", (req, res) => {
   const result = db.prepare("DELETE FROM conversations WHERE id = ?").run(req.params.id);
 

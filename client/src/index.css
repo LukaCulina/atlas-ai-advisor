@@ -113,7 +113,7 @@ button:disabled {
 }
 
 .app-shell {
-  min-height: 100svh;
+  height: 100svh;
   display: flex;
   flex-direction: row;
 }
@@ -355,6 +355,7 @@ button:disabled {
   flex-wrap: wrap;
   gap: 4px;
   border-radius: 15px;
+  padding: 5px;
   padding-left: 10px;
 }
 
@@ -410,11 +411,8 @@ button:disabled {
 }
 
 .conversation-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
+  position: fixed;
   z-index: 30;
-  margin-top: 2px;
   min-width: 170px;
   display: flex;
   flex-direction: column;
@@ -733,13 +731,21 @@ button:disabled {
 .trip-form input,
 .trip-form textarea,
 .trip-day-form input,
-.trip-day-form textarea {
+.trip-day-form textarea,
+.conversation-rename-input {
   font: inherit;
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
+}
+
+.conversation-rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 0.9rem;
 }
 
 .chat-input textarea {
@@ -831,6 +837,7 @@ button:disabled {
   display: block;
   opacity: var(--opacity-muted-strong);
   max-width: 640px;
+  margin-bottom: 15px;
 }
 
 .settings-prompt {

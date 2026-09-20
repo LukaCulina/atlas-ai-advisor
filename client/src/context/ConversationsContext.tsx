@@ -41,9 +41,22 @@ export function ConversationsProvider({ children }: { children: React.ReactNode 
     setConversations((prev) => (prev ? prev.map((c) => (c.id === id ? { ...c, title } : c)) : prev));
   }, []);
 
+  const renameConversation = useCallback(async (id: number, title: string) => {
+    await api.renameConversation(id, title);
+    setConversations((prev) => (prev ? prev.map((c) => (c.id === id ? { ...c, title } : c)) : prev));
+  }, []);
+
   const value = useMemo(
-    () => ({ conversations, loadError, refresh, createConversation, deleteConversation, updateTitleLocally }),
-    [conversations, loadError, refresh, createConversation, deleteConversation, updateTitleLocally]
+    () => ({
+      conversations,
+      loadError,
+      refresh,
+      createConversation,
+      deleteConversation,
+      updateTitleLocally,
+      renameConversation,
+    }),
+    [conversations, loadError, refresh, createConversation, deleteConversation, updateTitleLocally, renameConversation]
   );
 
   return <ConversationsContext.Provider value={value}>{children}</ConversationsContext.Provider>;

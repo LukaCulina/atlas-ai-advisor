@@ -88,6 +88,9 @@ export const api = {
       body: JSON.stringify({ title }),
     }),
 
+  renameConversation: (id: number, title: string) =>
+    request<Conversation>(`/conversations/${id}`, { method: "PATCH", body: JSON.stringify({ title }) }),
+
   deleteConversation: (id: number) =>
     request<void>(`/conversations/${id}`, { method: "DELETE" }),
 
