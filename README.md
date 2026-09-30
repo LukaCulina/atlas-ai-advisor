@@ -1,7 +1,4 @@
-# AI Advisor Chatbot — <your name>
-
-> Replace this file's placeholder sections with your own content as you work.
-> These seven sections are required (the last one optional) — see TASK.md for details.
+# Atlas - AI Advisor Chatbot
 
 ## 1. Setup & run
 
