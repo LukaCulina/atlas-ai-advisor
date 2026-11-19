@@ -1,4 +1,4 @@
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 export interface ToolCall {
   id: string;
@@ -41,6 +41,7 @@ export async function createChatCompletion(
     body: JSON.stringify({
       model: model || process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5",
       messages,
+      reasoning_effort: "none",
       ...(tools ? { tools } : {}),
     }),
   });
