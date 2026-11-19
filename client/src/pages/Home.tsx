@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useConversations } from "../hooks/useConversations";
 import { useTopBarTitle } from "../hooks/useTopBarTitle";
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
+import { AtlasMark } from "../components/AtlasMark";
 import { SendIcon } from "../components/SendIcon";
 
 const TITLE_PREVIEW_LENGTH = 60;
@@ -69,7 +70,11 @@ export function Home() {
 
   return (
     <div className="empty-state">
-      <h1>Welcome to Atlas</h1>
+      <div className="home-brand">
+        <AtlasMark size={56} />
+        <h1>Atlas</h1>
+        <p className="home-tagline">Your AI travel companion</p>
+      </div>
       <p>Start a new conversation to begin planning your trip.</p>
 
       <div className="suggestion-chips">

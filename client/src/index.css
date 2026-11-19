@@ -167,10 +167,41 @@ button:disabled {
 }
 
 .app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   font-size: 1.1rem;
   text-decoration: none;
   color: var(--text-h);
+}
+
+.atlas-mark {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.home-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.home-brand h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.home-tagline {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: var(--opacity-muted-strong);
 }
 
 .sidebar {

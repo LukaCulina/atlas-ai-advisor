@@ -1,6 +1,8 @@
 import { Link, NavLink } from "react-router-dom";
 import { useConversations } from "../hooks/useConversations";
 import { ConversationRow } from "./ConversationRow";
+import { AtlasMark } from "./AtlasMark";
+import { SettingsIcon } from "./SettingsIcon";
 import { TripIcon } from "./TripIcon";
 
 interface SidebarProps {
@@ -20,6 +22,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
     <nav className={`sidebar${mobileOpen ? " drawer-open" : ""}`} aria-label="Sidebar" inert={hidden}>
       <div className="sidebar-header">
         <Link to="/" className="app-title">
+          <AtlasMark size={22} />
           Atlas
         </Link>
         <button ref={closeButtonRef} className="drawer-close" onClick={onCloseMobile} aria-label="Close menu">
@@ -74,6 +77,7 @@ export function Sidebar({ mobileOpen, hidden, onCloseMobile, closeButtonRef }: S
 
       <div className="sidebar-footer">
         <NavLink to="/settings" className={sidebarNavLinkClassName}>
+          <SettingsIcon />
           Settings
         </NavLink>
       </div>
